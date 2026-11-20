@@ -1,15 +1,6 @@
 extends StaticBody2D
-
-var can_interact: bool = false:
-	set(value):
-		can_interact = value
-		$InteractSign.visible = value
+## Sleeping in the bed ends the day.
 
 
-func _ready() -> void:
-	can_interact = false
-
-
-func interact(player: CharacterBody2D) -> void:
-	if can_interact:
-		player.day_change.emit()
+func _on_interactable_interacted(player: Node) -> void:
+	player.day_change.emit()

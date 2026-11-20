@@ -1,8 +1,6 @@
 # TODO: Move while using tools 
 extends CharacterBody2D
 
-var debug: bool = true
-
 const SPEED: float = Data.PLAYER_SPEED
 var direction: Vector2
 var can_move: bool = true
@@ -17,10 +15,6 @@ var seeds_count: int = Enum.Seed.size()
 
 var current_state: Enum.State = Enum.State.DEFAULT
 
-var current_style: Enum.Style = Enum.Style.STRAW
-var style_count: int = Data.unlocked_styles.size()
-var style_index: int = 0
-
 var current_machine: Enum.Machine = Enum.Machine.DELETE
 var machine_count = Data.unlocked_machines.size()
 var machine_index: int = 0
@@ -34,12 +28,9 @@ signal do_action(anim_tree: AnimationTree, property: StringName, tool: Enum.Tool
 signal diagnose
 signal day_change
 
-var can_interact: bool = false
-var last_interactable
+var _interactables: Array[Interactable] = []
 
 signal update_control_ui(key_enum: Enum.KEYBOARD, currentItem: Enum)
-
-signal close_shop 
 
 var update_state: Enum.State = Enum.State.HOUSE;
 
@@ -81,6 +72,7 @@ func _ready():
 
 
 func _physics_process(_delta: float) -> void:
+	_update_interact_focus()
 	if update_state != current_state:
 		if current_state == Enum.State.BUILDING:
 			update_control_ui.emit(Enum.KEYBOARD.CHANGE_MODE, current_state, Enum.State.BUILDING)		
@@ -109,9 +101,6 @@ func _physics_process(_delta: float) -> void:
 			get_house_input()
 			move()
 			animate()
-			
-		Enum.State.SHOP:
-			get_shop_input()
 				
 	
 func move():
@@ -132,8 +121,6 @@ func get_basic_input():
 	# Switch seeds
 	if Input.is_action_just_pressed("seed_forward"):
 		current_seed = posmod((current_seed + 1), seeds_count) as Enum.Seed
-		if debug:
-			print("Current Seed:" + Enum.Seed.keys()[current_seed])
 		$ToolUI.reveal(null, current_seed)
 		update_control_ui.emit(Enum.KEYBOARD.CHANGE_SEED, current_seed)
 		
@@ -145,9 +132,7 @@ func get_basic_input():
 		update_control_ui.emit(Enum.KEYBOARD.CHANGE_TOOL, current_tool)
 
 	if Input.is_action_just_pressed("action"):
-		if can_interact and last_interactable:
-			last_interactable.interact(self)
-		else:
+		if not _interact_with_nearest():
 			tool_state_machine.travel(Data.TOOL_STATE_ANIMATIONS[current_tool])
 			do_action.emit($Animation/AnimationTree, "parameters/OneShot/request", current_tool, position, animation_direction)
 			#$Animation/AnimationTree.set("parameters/OneShot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
@@ -161,14 +146,6 @@ func get_basic_input():
 		
 	if Input.is_action_just_pressed("diagnose"):
 		diagnose.emit()
-		
-	if Input.is_action_just_pressed("style_toggle"):
-		style_count = Data.unlocked_styles.size()
-		style_index = posmod((style_index + 1), style_count - 1)
-		current_style = Data.unlocked_styles[style_index] as Enum.Style
-		print(current_style)
-		$Sprite2D.texture = Data.PLAYER_SKINS[current_style]
-		update_control_ui.emit(Enum.KEYBOARD.CHANGE_STYLE, current_style)
 		
 	if Input.is_action_just_pressed("build"):
 		current_state = Enum.State.BUILDING
@@ -197,9 +174,6 @@ func get_building_input():
 		machine_index = posmod((machine_index + int(dir)), machine_count) as Enum.Machine
 		current_machine = Data.unlocked_machines[machine_index] as Enum.Machine 
 		change_machine.emit(current_machine)
-		if debug:
-			print("Machine" + str(current_machine))
-			
 		update_control_ui.emit(Enum.KEYBOARD.CHANGE_MACHINE, current_machine, Enum.State.BUILDING)
 		
 			
@@ -211,18 +185,8 @@ func get_house_input():
 	if Input.is_action_just_pressed("diagnose"):
 		diagnose.emit()
 		
-	if Input.is_action_just_pressed("style_toggle"):
-		current_style = posmod((current_style + 1), style_count - 1) as Enum.Style
-		$Sprite2D.texture = Data.PLAYER_SKINS[current_style]
-		
 	if Input.is_action_just_pressed("action"):
-		if can_interact and last_interactable:
-			last_interactable.interact(self)
-	
-	
-func get_shop_input():
-	if Input.is_action_just_pressed("ui_cancel"):
-		close_shop.emit()
+		_interact_with_nearest()
 
 
 func animate():
@@ -275,23 +239,45 @@ func _on_fishing_game_fish_game_finish(is_success: bool) -> void:
 
 
 
-# Interact: this method only work if there is only 1 interactable in area 2D
-func _on_interact_range_area_2d_body_entered(body: Node2D) -> void:
-	if body.has_method("interact"):
-		body.can_interact = true
-		can_interact = true
-		last_interactable = body
+# Interaction: every Interactable in range is tracked; only the nearest is focused/used.
+func _on_interact_range_area_entered(area: Area2D) -> void:
+	if area is Interactable and area not in _interactables:
+		_interactables.append(area)
 
 
+func _on_interact_range_area_exited(area: Area2D) -> void:
+	if area is Interactable:
+		_interactables.erase(area)
+		area.focused = false
 
-func _on_interact_range_area_2d_body_exited(body: Node2D) -> void:
-	can_interact = false
-	last_interactable = null
-	if body.has_method("interact"):
-		body.can_interact = false
 
-	
-	
+func _nearest_interactable() -> Interactable:
+	var nearest: Interactable = null
+	var best := INF
+	for candidate in _interactables:
+		if not is_instance_valid(candidate) or not candidate.enabled:
+			continue
+		var dist := global_position.distance_squared_to(candidate.global_position)
+		if dist < best:
+			best = dist
+			nearest = candidate
+	return nearest
+
+
+func _update_interact_focus() -> void:
+	_interactables.assign(_interactables.filter(is_instance_valid))
+	var nearest := _nearest_interactable()
+	for candidate in _interactables:
+		candidate.focused = candidate == nearest
+
+
+## Trigger the nearest interactable in range. Returns false if there is none.
+func _interact_with_nearest() -> bool:
+	var nearest := _nearest_interactable()
+	if nearest == null:
+		return false
+	nearest.interact(self)
+	return true
 
 
 func _on_step_timer_timeout() -> void:

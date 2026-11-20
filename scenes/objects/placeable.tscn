@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://c4akwq56h2we6"]
 
-[ext_resource type="Script" uid="uid://bpouhg5gnpygh" path="res://scripts/machines/machine.gd" id="1_dpiym"]
+[ext_resource type="Script" uid="uid://bpouhg5gnpygh" path="res://scripts/objects/placeable.gd" id="1_dpiym"]
 
-[node name="Machine" type="StaticBody2D" unique_id=798620987]
+[node name="Placeable" type="StaticBody2D" unique_id=798620987]
 collision_layer = 132
 collision_mask = 0
 script = ExtResource("1_dpiym")

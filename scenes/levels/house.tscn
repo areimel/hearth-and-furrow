@@ -1,10 +1,9 @@
 [gd_scene format=4 uid="uid://bfjaiku70hbc8"]
 
 [ext_resource type="Script" uid="uid://x1lxu5p2uw37" path="res://scripts/house.gd" id="1_g6yoe"]
-[ext_resource type="TileSet" uid="uid://cw45kfg2c8mfk" path="res://premade/HouseTileSet.tres" id="1_mfwd8"]
+[ext_resource type="TileSet" uid="uid://cw45kfg2c8mfk" path="res://resources/house_tileset.tres" id="1_mfwd8"]
 [ext_resource type="Texture2D" uid="uid://dpvg3yddudamn" path="res://graphics/tilesets/walls_floor_tile.png" id="3_bbbus"]
 [ext_resource type="Texture2D" uid="uid://cwbhys0nypuq" path="res://graphics/tilesets/roof.png" id="4_jfia5"]
-[ext_resource type="PackedScene" uid="uid://bk2s3d813v044" path="res://scenes/levels/tv.tscn" id="5_ap60n"]
 [ext_resource type="PackedScene" uid="uid://dh6ybk44v1xuu" path="res://scenes/levels/bed.tscn" id="6_4yql1"]
 [ext_resource type="Texture2D" uid="uid://c6gdvovhpj0oj" path="res://graphics/objects/plant.png" id="7_e6eqm"]
 [ext_resource type="Texture2D" uid="uid://dvaxmp1m08kte" path="res://graphics/objects/carpet.png" id="8_dg1t0"]
@@ -75,10 +74,6 @@ polygon = PackedVector2Array(-112, 62, -112, -32, -2, -32, -2, 62, -63, 62, -63,
 z_index = 5
 tile_map_data = PackedByteArray("AAD5/wEAAAAAAAQAAAD6/wEAAAABAAQAAAD7/wEAAAABAAQAAAD8/wEAAAABAAQAAAD9/wEAAAABAAQAAAD+/wEAAAABAAQAAAD5/wIAAAAAAAQAAAD5/wMAAAAAAAUAAAD6/wIAAAABAAQAAAD6/wMAAAABAAUAAAD7/wIAAAABAAQAAAD7/wMAAAABAAUAAAD8/wIAAAABAAQAAAD8/wMAAAABAAUAAAD9/wIAAAABAAQAAAD9/wMAAAABAAUAAAD+/wIAAAABAAQAAAD+/wMAAAABAAUAAAD//wEAAAACAAQAAAD//wIAAAACAAQAAAD//wMAAAACAAUAAAD5//7/AAAAAAEAAAD5////AAAAAAIAAAD6//7/AAABAAEAAAD6////AAABAAIAAAD7//7/AAABAAEAAAD7////AAABAAIAAAD8//7/AAABAAEAAAD8////AAABAAIAAAD9//7/AAABAAEAAAD9////AAABAAIAAAD+//7/AAABAAEAAAD+////AAABAAIAAAD///7/AAACAAEAAAD/////AAACAAIAAAD5//3/AAAAAAAAAAD6//3/AAABAAAAAAD7//3/AAABAAAAAAD8//3/AAABAAAAAAD9//3/AAABAAAAAAD+//3/AAABAAAAAAD///3/AAACAAAAAAD5/wAAAAAAAAMAAAD6/wAAAAABAAMAAAD7/wAAAAABAAMAAAD8/wAAAAABAAMAAAD9/wAAAAABAAMAAAD+/wAAAAABAAMAAAD//wAAAAACAAMAAAA=")
 tile_set = SubResource("TileSet_4yql1")
-
-[node name="TV" parent="." unique_id=1619880589 instance=ExtResource("5_ap60n")]
-position = Vector2(-73, -11)
-metadata/_edit_group_ = true
 
 [node name="bed" parent="." unique_id=2076695548 instance=ExtResource("6_4yql1")]
 position = Vector2(-22, 31)

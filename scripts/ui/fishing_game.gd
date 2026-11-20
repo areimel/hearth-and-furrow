@@ -184,11 +184,9 @@ func _on_texture_progress_bar_value_changed(value: float) -> void:
 	if value >= 100.0:
 		# Success - fish caught!
 		hide()
-		print("Fish caught successfully!")
 		fish_game_finish.emit(true)
 		
 	elif value <= 0.0:
 		# Failure - fish escaped
 		hide()
-		print("Fish escaped!")
 		fish_game_finish.emit(false)
