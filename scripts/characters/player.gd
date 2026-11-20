@@ -28,8 +28,7 @@ signal do_action(anim_tree: AnimationTree, property: StringName, tool: Enum.Tool
 signal diagnose
 signal day_change
 
-var can_interact: bool = false
-var last_interactable
+var _interactables: Array[Interactable] = []
 
 signal update_control_ui(key_enum: Enum.KEYBOARD, currentItem: Enum)
 
@@ -73,6 +72,7 @@ func _ready():
 
 
 func _physics_process(_delta: float) -> void:
+	_update_interact_focus()
 	if update_state != current_state:
 		if current_state == Enum.State.BUILDING:
 			update_control_ui.emit(Enum.KEYBOARD.CHANGE_MODE, current_state, Enum.State.BUILDING)		
@@ -132,9 +132,7 @@ func get_basic_input():
 		update_control_ui.emit(Enum.KEYBOARD.CHANGE_TOOL, current_tool)
 
 	if Input.is_action_just_pressed("action"):
-		if can_interact and last_interactable:
-			last_interactable.interact(self)
-		else:
+		if not _interact_with_nearest():
 			tool_state_machine.travel(Data.TOOL_STATE_ANIMATIONS[current_tool])
 			do_action.emit($Animation/AnimationTree, "parameters/OneShot/request", current_tool, position, animation_direction)
 			#$Animation/AnimationTree.set("parameters/OneShot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
@@ -188,10 +186,9 @@ func get_house_input():
 		diagnose.emit()
 		
 	if Input.is_action_just_pressed("action"):
-		if can_interact and last_interactable:
-			last_interactable.interact(self)
-	
-	
+		_interact_with_nearest()
+
+
 func animate():
 	if direction:
 		move_state_machine.travel("walk")
@@ -242,23 +239,45 @@ func _on_fishing_game_fish_game_finish(is_success: bool) -> void:
 
 
 
-# Interact: this method only work if there is only 1 interactable in area 2D
-func _on_interact_range_area_2d_body_entered(body: Node2D) -> void:
-	if body.has_method("interact"):
-		body.can_interact = true
-		can_interact = true
-		last_interactable = body
+# Interaction: every Interactable in range is tracked; only the nearest is focused/used.
+func _on_interact_range_area_entered(area: Area2D) -> void:
+	if area is Interactable and area not in _interactables:
+		_interactables.append(area)
 
 
+func _on_interact_range_area_exited(area: Area2D) -> void:
+	if area is Interactable:
+		_interactables.erase(area)
+		area.focused = false
 
-func _on_interact_range_area_2d_body_exited(body: Node2D) -> void:
-	can_interact = false
-	last_interactable = null
-	if body.has_method("interact"):
-		body.can_interact = false
 
-	
-	
+func _nearest_interactable() -> Interactable:
+	var nearest: Interactable = null
+	var best := INF
+	for candidate in _interactables:
+		if not is_instance_valid(candidate) or not candidate.enabled:
+			continue
+		var dist := global_position.distance_squared_to(candidate.global_position)
+		if dist < best:
+			best = dist
+			nearest = candidate
+	return nearest
+
+
+func _update_interact_focus() -> void:
+	_interactables.assign(_interactables.filter(is_instance_valid))
+	var nearest := _nearest_interactable()
+	for candidate in _interactables:
+		candidate.focused = candidate == nearest
+
+
+## Trigger the nearest interactable in range. Returns false if there is none.
+func _interact_with_nearest() -> bool:
+	var nearest := _nearest_interactable()
+	if nearest == null:
+		return false
+	nearest.interact(self)
+	return true
 
 
 func _on_step_timer_timeout() -> void:

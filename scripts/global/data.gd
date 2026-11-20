@@ -82,7 +82,7 @@ const FISH_DATA = {
 
 # ======== Placeables (build mode) ========
 const MACHINE_SCENE = {
-	Enum.Machine.DELETE: {"scene": preload("res://scenes/machines/machine.tscn")}}
+	Enum.Machine.DELETE: {"scene": preload("res://scenes/objects/placeable.tscn")}}
 
 const MACHINE_PREVIEW_TEXTURES = {
 	Enum.Machine.DELETE: {'texture': preload("res://graphics/icons/delete.png"), 'offset': Vector2i(-8, -8)}}
