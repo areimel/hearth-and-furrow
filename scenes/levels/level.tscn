@@ -12,12 +12,9 @@
 [ext_resource type="PackedScene" uid="uid://tnt55tpg05br" path="res://scenes/objects/simple_object.tscn" id="10_rmjfq"]
 [ext_resource type="PackedScene" uid="uid://cntexmap73t0k" path="res://scenes/ui/plant_info_control.tscn" id="11_7pb6i"]
 [ext_resource type="PackedScene" uid="uid://bfjaiku70hbc8" path="res://scenes/levels/house.tscn" id="12_8iyoh"]
-[ext_resource type="PackedScene" uid="uid://bu6p00q23wr75" path="res://scenes/characters/cat.tscn" id="12_mq31s"]
 [ext_resource type="Texture2D" uid="uid://da1u0rhfjt8a3" path="res://graphics/weather/drops.png" id="13_qogh7"]
-[ext_resource type="PackedScene" uid="uid://bipt8ibmsue4m" path="res://scenes/characters/mouse.tscn" id="15_jyre1"]
 [ext_resource type="Texture2D" uid="uid://capn581vt8q7g" path="res://graphics/icons/sprinkler.png" id="15_mq31s"]
 [ext_resource type="PackedScene" uid="uid://dg6oaylgfaiwo" path="res://scenes/ui/inventory.tscn" id="16_jyre1"]
-[ext_resource type="PackedScene" uid="uid://tqv0e2o3f1h1" path="res://scenes/ui/shop_ui.tscn" id="16_qhnmj"]
 [ext_resource type="PackedScene" uid="uid://4t651cjey82n" path="res://scenes/ui/keyboard_control_hint_ui.tscn" id="17_jyre1"]
 
 [sub_resource type="Gradient" id="Gradient_rmjfq"]
@@ -2480,9 +2477,6 @@ position = Vector2(-334, -252)
 [node name="tree29" parent="Objects/Trees" unique_id=1514511513 instance=ExtResource("9_7pb6i")]
 position = Vector2(-328, -89)
 
-[node name="Enemies" type="Node2D" parent="Objects" unique_id=1145495172]
-y_sort_enabled = true
-
 [node name="Decorations" type="Node2D" parent="Objects" unique_id=1154521367]
 
 [node name="SimpleObject" parent="Objects/Decorations" unique_id=1529564000 instance=ExtResource("10_rmjfq")]
@@ -2703,16 +2697,6 @@ size = 2
 [node name="Machines" type="Node2D" parent="Objects" unique_id=345588995]
 y_sort_enabled = true
 
-[node name="Shopkeepers" type="Node2D" parent="Objects" unique_id=1799671027]
-y_sort_enabled = true
-
-[node name="Cat" parent="Objects/Shopkeepers" unique_id=177865440 instance=ExtResource("12_mq31s")]
-position = Vector2(132, -179)
-
-[node name="Mouse" parent="Objects/Shopkeepers" unique_id=692057752 instance=ExtResource("15_jyre1")]
-y_sort_enabled = true
-position = Vector2(325, -102)
-
 [node name="Overlay" type="Node2D" parent="." unique_id=1816635256]
 
 [node name="CanvasModulate" type="CanvasModulate" parent="Overlay" unique_id=1154969611]
@@ -2730,8 +2714,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.04780578, 0.015162113, 0.092368476, 1)
-
-[node name="ShopUI" parent="Overlay/CanvasLayer" unique_id=1397887581 instance=ExtResource("16_qhnmj")]
 
 [node name="Inventory" parent="Overlay/CanvasLayer" unique_id=1204295102 instance=ExtResource("16_jyre1")]
 
@@ -2760,36 +2742,6 @@ wait_time = 120.0
 one_shot = true
 autostart = true
 
-[node name="BlobTimer" type="Timer" parent="Timers" unique_id=1280653253]
-wait_time = 10.0
-autostart = true
-
-[node name="BlobSpawnPositions" type="Node2D" parent="." unique_id=853621794]
-
-[node name="Marker2D" type="Marker2D" parent="BlobSpawnPositions" unique_id=1048912037]
-position = Vector2(-496, 52)
-
-[node name="Marker2D2" type="Marker2D" parent="BlobSpawnPositions" unique_id=641738929]
-position = Vector2(379, 167)
-
-[node name="Marker2D3" type="Marker2D" parent="BlobSpawnPositions" unique_id=2039053061]
-position = Vector2(-110, 289)
-
-[node name="Marker2D4" type="Marker2D" parent="BlobSpawnPositions" unique_id=1283623002]
-position = Vector2(-318, 159)
-
-[node name="Marker2D5" type="Marker2D" parent="BlobSpawnPositions" unique_id=1859597280]
-position = Vector2(-92, -288)
-
-[node name="Marker2D8" type="Marker2D" parent="BlobSpawnPositions" unique_id=1680199929]
-position = Vector2(-369, -210)
-
-[node name="Marker2D9" type="Marker2D" parent="BlobSpawnPositions" unique_id=654740737]
-position = Vector2(324, 24)
-
-[node name="Marker2D10" type="Marker2D" parent="BlobSpawnPositions" unique_id=717605968]
-position = Vector2(-91, -288)
-
 [node name="Sounds" type="Node2D" parent="." unique_id=439790127]
 
 [node name="Rain" type="AudioStreamPlayer2D" parent="Sounds" unique_id=1103456792]
@@ -2804,11 +2756,8 @@ autoplay = true
 [connection signal="update_hint_ui_keys" from="." to="Overlay/CanvasLayer/KeyboardControlHintUI" method="_on_level_update_hint_ui_keys"]
 [connection signal="build" from="Objects/Player" to="." method="_on_player_build"]
 [connection signal="change_machine" from="Objects/Player" to="." method="_on_player_change_machine"]
-[connection signal="close_shop" from="Objects/Player" to="." method="_on_player_close_shop"]
 [connection signal="day_change" from="Objects/Player" to="." method="_on_player_day_change"]
 [connection signal="diagnose" from="Objects/Player" to="." method="_on_player_diagnose"]
 [connection signal="do_action" from="Objects/Player" to="." method="_on_player_do_action"]
 [connection signal="tool_use" from="Objects/Player" to="." method="_on_player_tool_use"]
 [connection signal="update_control_ui" from="Objects/Player" to="Overlay/CanvasLayer/KeyboardControlHintUI" method="_on_player_update_control_ui"]
-[connection signal="close" from="Overlay/CanvasLayer/ShopUI" to="." method="_on_player_close_shop"]
-[connection signal="timeout" from="Timers/BlobTimer" to="." method="_on_blob_timer_timeout"]

@@ -1,8 +1,6 @@
 # TODO: Move while using tools 
 extends CharacterBody2D
 
-var debug: bool = true
-
 const SPEED: float = Data.PLAYER_SPEED
 var direction: Vector2
 var can_move: bool = true
@@ -16,10 +14,6 @@ var current_seed: Enum.Seed = Enum.Seed.TOMATO
 var seeds_count: int = Enum.Seed.size()
 
 var current_state: Enum.State = Enum.State.DEFAULT
-
-var current_style: Enum.Style = Enum.Style.STRAW
-var style_count: int = Data.unlocked_styles.size()
-var style_index: int = 0
 
 var current_machine: Enum.Machine = Enum.Machine.DELETE
 var machine_count = Data.unlocked_machines.size()
@@ -38,8 +32,6 @@ var can_interact: bool = false
 var last_interactable
 
 signal update_control_ui(key_enum: Enum.KEYBOARD, currentItem: Enum)
-
-signal close_shop 
 
 var update_state: Enum.State = Enum.State.HOUSE;
 
@@ -109,9 +101,6 @@ func _physics_process(_delta: float) -> void:
 			get_house_input()
 			move()
 			animate()
-			
-		Enum.State.SHOP:
-			get_shop_input()
 				
 	
 func move():
@@ -132,8 +121,6 @@ func get_basic_input():
 	# Switch seeds
 	if Input.is_action_just_pressed("seed_forward"):
 		current_seed = posmod((current_seed + 1), seeds_count) as Enum.Seed
-		if debug:
-			print("Current Seed:" + Enum.Seed.keys()[current_seed])
 		$ToolUI.reveal(null, current_seed)
 		update_control_ui.emit(Enum.KEYBOARD.CHANGE_SEED, current_seed)
 		
@@ -162,14 +149,6 @@ func get_basic_input():
 	if Input.is_action_just_pressed("diagnose"):
 		diagnose.emit()
 		
-	if Input.is_action_just_pressed("style_toggle"):
-		style_count = Data.unlocked_styles.size()
-		style_index = posmod((style_index + 1), style_count - 1)
-		current_style = Data.unlocked_styles[style_index] as Enum.Style
-		print(current_style)
-		$Sprite2D.texture = Data.PLAYER_SKINS[current_style]
-		update_control_ui.emit(Enum.KEYBOARD.CHANGE_STYLE, current_style)
-		
 	if Input.is_action_just_pressed("build"):
 		current_state = Enum.State.BUILDING
 		change_machine.emit(current_machine)
@@ -197,9 +176,6 @@ func get_building_input():
 		machine_index = posmod((machine_index + int(dir)), machine_count) as Enum.Machine
 		current_machine = Data.unlocked_machines[machine_index] as Enum.Machine 
 		change_machine.emit(current_machine)
-		if debug:
-			print("Machine" + str(current_machine))
-			
 		update_control_ui.emit(Enum.KEYBOARD.CHANGE_MACHINE, current_machine, Enum.State.BUILDING)
 		
 			
@@ -211,20 +187,11 @@ func get_house_input():
 	if Input.is_action_just_pressed("diagnose"):
 		diagnose.emit()
 		
-	if Input.is_action_just_pressed("style_toggle"):
-		current_style = posmod((current_style + 1), style_count - 1) as Enum.Style
-		$Sprite2D.texture = Data.PLAYER_SKINS[current_style]
-		
 	if Input.is_action_just_pressed("action"):
 		if can_interact and last_interactable:
 			last_interactable.interact(self)
 	
 	
-func get_shop_input():
-	if Input.is_action_just_pressed("ui_cancel"):
-		close_shop.emit()
-
-
 func animate():
 	if direction:
 		move_state_machine.travel("walk")
