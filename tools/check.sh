@@ -14,6 +14,8 @@ stage() { printf '\n== %s\n' "$1"; }
 errors_in() { grep -E 'ERROR|SCRIPT ERROR|Parse Error|Failed to load|Invalid (call|get|set|access)' "$1" | grep -vE "$IGNORE"; }
 
 stage "import"
+# Twice: the first pass can report stale-cache errors after files were moved or deleted.
+"$GODOT" --path . --headless --import >/dev/null 2>&1
 "$GODOT" --path . --headless --import >"$LOG/import.log" 2>&1
 if errors_in "$LOG/import.log"; then fail=1; fi
 
