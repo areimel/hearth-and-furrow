@@ -46,8 +46,8 @@ Rules for contributors (human or agent):
 
 ## Wave 4 — hardening
 - [x] 28. Full-year headless simulation
-- [ ] 29. Review findings fixed
-- [ ] 30. Balance and controller pass
+- [x] 29. Review findings fixed
+- [x] 30. Balance and controller pass
 - [ ] 31. Docs
 
 ## Deferred past MVP
