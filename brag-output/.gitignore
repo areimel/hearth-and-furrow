@@ -1,0 +1,5 @@
+work/frames/
+work/clips/
+work/stills_raw/
+work/*.wav
+work/__pycache__/
