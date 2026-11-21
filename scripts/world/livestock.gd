@@ -92,6 +92,7 @@ func from_dict(data: Dictionary) -> void:
 
 ## New game: starter herd of 1 cow, 1 sheep and 2 chickens.
 func reset() -> void:
+	_has_pending = false
 	_clear()
 	_spawn_starter_herd()
 
