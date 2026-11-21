@@ -54,14 +54,14 @@
     M.village = mkMedia(S.village, "village", 1920, 1080);
     M.alewife = mkMedia(S.alewife, "alewife", 1920, 1080);
     M.mayday = mkMedia(S.mayday, "mayday", 1600, 900, "framed");
-    M.herd = mkMedia(S.herd, "herd", 1920, 1080);
+    M.herd = mkMedia(S.herd, "herd", 1600, 900, "framed");
     M.shop = mkMedia(S.shop, "shop", 1600, 900, "framed");
-    M.night = mkMedia(S.outro, "night", 1920, 1080);
+    M.night = mkMedia(S.outro, "plants", 1920, 1080);
     // cards
     M.cards = ["thresh", "quern", "oven"].map(function (n, i) {
       var c = document.createElement("div"); c.className = "card"; c.style.width = "1008px"; c.style.height = "588px";
       var inn = document.createElement("div"); inn.className = "in"; c.appendChild(inn);
-      var m = mkMedia(inn, n, 960, 540); S.craft.appendChild(c); m.card = c; m.x = 24 + i * 432; m.y = 36 + i * 100; m.t0 = 280 + i * 20; return m;
+      var m = mkMedia(inn, n, 960, 540); S.craft.appendChild(c); m.card = c; m.x = 24 + i * 432; m.y = 24 + i * 84; m.t0 = 280 + i * 20; return m;
     });
     // hook text
     var full = "A storm is coming…";
@@ -76,7 +76,7 @@
     M.logo = plaque(S.reveal, "Hearth & Furrow", 0, "logo"); M.logo.style.top = "336px";
     M.tag = plaque(S.reveal, "A cozy Tudor farming sim · c.1530", 0); M.tag.style.top = "600px";
     // craft caption
-    M.cap4 = plaque(S.craft, "", 0); M.cap4.style.top = "900px";
+    M.cap4 = plaque(S.craft, "", 0); M.cap4.style.top = "828px";
     M.cap4g = ["Sow it.", "Thresh it.", "Grind it.", "Bake it."].map(function (t, i) {
       var s = document.createElement("span"); s.textContent = t; s.style.marginLeft = i ? "27px" : "0"; M.cap4.appendChild(s); return s;
     });
@@ -147,7 +147,7 @@
       M.shade.style.opacity = "0.45"; M.title.el.style.filter = "blur(6px)";
       var tl = prog(f, 164, 170); M.logo.style.display = f >= 164 ? "block" : "none"; tf(M.logo, 0, 0, 0.8 + 0.2 * backOut(tl));
       var tg = prog(f, 172, 180); M.tag.style.display = f >= 172 ? "block" : "none"; tf(M.tag, 0, (1 - easeOut(tg)) * 40, 1);
-      var ex = easeIO(prog(f, 234, 240)); if (ex > 0) { tf(M.logo, 0, -ex * 500, 1); tf(M.tag, 0, ex * 700, 1); }
+      var ex = prog(f, 233, 239); M.logo.style.opacity = M.tag.style.opacity = String(1 - ex);
     }
     // 4 craft (also underneath the wipe)
     if (sc === "craft" || wipe) {
@@ -159,7 +159,7 @@
       M.cap4starts.forEach(function (s, i) { M.cap4g[i].style.display = f >= s ? "inline" : "none"; });
       M.cap4.style.display = f >= 240 ? "block" : "none";
       var ce = easeIO(prog(f, 354, 360)), cin = easeOut(prog(f, 240, 244));
-      tf(M.cap4, 0, ce * 200 + (1 - cin) * 40, 1);
+      tf(M.cap4, 0, (1 - cin) * 12, 1); M.cap4.style.opacity = String(cin * (1 - ce));
     }
     // 5-7 stills and clips
     if (sc === "village") clip(M.village, "village", f - 360);
@@ -176,11 +176,11 @@
       M.capEl.style.display = "block"; M.capEl.textContent = cap.text;
       M.capEl.style.left = "0"; M.capEl.style.right = "0"; M.capEl.style.margin = "0 auto"; M.capEl.style.width = "fit-content";
       M.capEl.style.top = cap.top !== undefined ? cap.top + "px" : "auto"; M.capEl.style.bottom = cap.bottom !== undefined ? cap.bottom + "px" : "auto";
-      tf(M.capEl, cap.dx || 0, (1 - ti) * (cap.top !== undefined ? -60 : 60), 1);
+      tf(M.capEl, cap.dx || 0, (1 - ti) * (cap.top !== undefined ? -12 : 12), 1); M.capEl.style.opacity = String(ti);
     } else M.capEl.style.display = "none";
     // 8 outro
     if (sc === "outro") {
-      clip(M.night, "night", f - 560);
+      clip(M.night, "plants", f - 560); tf(M.night.el, 0, 0, 1 + 0.03 * prog(f, 560, 640)); M.night.el.style.filter = "brightness(0.8)";
       var po = easeIO(prog(f, 560, 572)); tf(M.panel, 0, 0, 0.9 + 0.1 * po);
       M.panel.style.left = "360px"; M.panel.style.top = "300px"; M.panel.style.transformOrigin = "50% 50%";
     }

@@ -253,9 +253,10 @@ def build():
             m = fifth if slot in (3, 6) else root
             add(bass, bass_note(mtof(m), 0.5, 0.5 if slot in (0, 4) else 0.32), bar * BAR + slot * EIGHTH, 0.0)
 
-    # drums and melody, bars 3-7
-    for bar in range(2, 7):
+    # drums from bar 2 (lighter there), melody bars 3-7
+    for bar in range(1, 7):  # bar 2 gets a lighter pattern so the turn isn't thin
         for slot, kind, vel in DRUM_SLOTS:
+            vel = vel * (0.65 if bar == 1 else 1.0)
             sig = thump(vel) if kind == "thump" else tek(vel * 0.6)
             add(drum, sig, bar * BAR + slot * EIGHTH, 0.05)
         if bar == 6:
@@ -313,9 +314,9 @@ def main():
     mix[:, f0:f1] *= (0.5 + 0.5 * np.cos(np.linspace(0, np.pi, f1 - f0))) ** 1.5
     mix[:, f1:] = 0.0
 
-    # soft limiter, then normalise to -1 dBFS
+    # soft limiter, then normalise to -3 dBFS (about -14 LUFS for web)
     y = np.tanh(1.3 * mix / np.abs(mix).max())
-    y *= 10 ** (-1 / 20) / np.abs(y).max()
+    y *= 10 ** (-3 / 20) / np.abs(y).max()
 
     pcm = np.round(y.T * 32767).astype("<i2")
     assert pcm.shape == (N, 2)
