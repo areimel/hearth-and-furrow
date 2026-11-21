@@ -213,17 +213,5 @@ func _ring(center: Vector2i, radius: int) -> Array[Vector2i]:
 
 func _open_screen(station: Station) -> void:
 	if _screen == null or not is_instance_valid(_screen):
-		_screen = get_tree().get_first_node_in_group(SCREEN_GROUP) as CraftingScreen
-	if _screen == null:
-		_screen = SCREEN_SCENE.instantiate()
-		_screen_parent().add_child(_screen)
+		_screen = ScreenLocator.find_or_create(get_tree(), SCREEN_GROUP, SCREEN_SCENE, self) as CraftingScreen
 	_screen.open_for(station)
-
-
-func _screen_parent() -> Node:
-	var layers := get_tree().root.find_children("*", "CanvasLayer", true, false)
-	if not layers.is_empty():
-		return layers[0]
-	var layer := CanvasLayer.new()
-	add_child(layer)
-	return layer

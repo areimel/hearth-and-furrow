@@ -155,11 +155,18 @@ func shop_buy(shop_id: StringName, entry_id: StringName) -> String:
 
 
 ## Sells `amount` of an item to shop `shop_id` at its price. Returns coins earned
-## (0 = the keeper does not buy it or you lack that many).
-func shop_sell(shop_id: StringName, item_id: StringName, amount: int = 1) -> int:
+## (0 = the keeper does not buy it or you lack that many). With `slot` >= 0 the items
+## are taken from that Inventory slot (which must hold them) instead of the pack at large.
+func shop_sell(shop_id: StringName, item_id: StringName, amount: int = 1, slot: int = -1) -> int:
 	var shop := Content.shop(shop_id)
 	var price := shop_sell_price(shop, item_id) if shop else 0
-	if amount <= 0 or price <= 0 or not Inventory.remove(item_id, amount):
+	if amount <= 0 or price <= 0:
+		return 0
+	if slot >= 0:
+		if Inventory.slot_id(slot) != item_id or Inventory.slot_count(slot) < amount:
+			return 0
+		Inventory.remove_at(slot, amount)
+	elif not Inventory.remove(item_id, amount):
 		return 0
 	add_coins(price * amount)
 	Progress.record(&"sold", item_id, amount)

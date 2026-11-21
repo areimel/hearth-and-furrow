@@ -62,6 +62,17 @@ func entry_button(index: int) -> Button:
 	return _buttons[index]
 
 
+## Show entry `index` greyed (still focusable and selectable, unlike `disabled`), e.g. a
+## recipe that cannot be started or a ware that cannot be afforded.
+func set_entry_greyed(index: int, greyed: bool) -> void:
+	var button := _buttons[index]
+	for state in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+		if greyed:
+			button.add_theme_color_override(state, UIPalette.INK_DISABLED)
+		else:
+			button.remove_theme_color_override(state)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel") and _focus_inside():
 		cancelled.emit()
@@ -88,7 +99,10 @@ func _fit_height() -> void:
 	if _buttons.is_empty():
 		custom_minimum_size.y = 0
 		return
-	var row := ROW_HEIGHT + _rows.get_theme_constant("separation")
+	var row_height := ROW_HEIGHT
+	for button in _buttons:
+		row_height = maxi(row_height, ceili(button.get_combined_minimum_size().y))
+	var row := row_height + _rows.get_theme_constant("separation")
 	custom_minimum_size.y = min(_buttons.size(), max_rows) * row - 1
 
 
