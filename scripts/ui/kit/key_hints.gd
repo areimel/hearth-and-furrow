@@ -1,6 +1,6 @@
 class_name KeyHints extends HBoxContainer
 ## A footer line of "[glyph] Label" pairs, e.g. "[A] Select  [B] Close". Glyphs follow
-## the active device (keyboard or gamepad) and refresh when a pad connects.
+## the device last used (keyboard or gamepad) and refresh when that changes.
 
 var _hints: Array[Dictionary] = []
 
@@ -11,13 +11,18 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	Input.joy_connection_changed.connect(func(_id: int, _on: bool) -> void: _rebuild())
+	add_to_group(InputGlyphs.GROUP)
 
 
 ## Replace the hints. Each: {text: String} plus either `action: StringName` (an input
 ## action) or `key: Key` and `button: JoyButton` (a fixed pair with no action).
 func set_hints(hints: Array[Dictionary]) -> void:
 	_hints = hints
+	_rebuild()
+
+
+## Redraw the glyphs for the current device (InputGlyphs.GROUP calls this).
+func refresh_glyphs() -> void:
 	_rebuild()
 
 

@@ -1,12 +1,11 @@
 class_name HudClockCard extends PanelContainer
-## Top-right card: time of day, weekday + date, season and today's weather icons, and a
-## marker on market days and feast days. Refreshes on signals only (clock tick, day
+## Top-right card: time of day with today's weather icon, weekday + date + season name, and a
+## marker on market days and feast days (a plain label, it opens nothing). Refreshes on signals only (clock tick, day
 ## rollover, weather change, load); there is no per-frame work.
 
 var _time: Label
 var _date: Label
 var _weather: TextureRect
-var _season: TextureRect
 var _marker: Label
 
 
@@ -26,7 +25,6 @@ func refresh() -> void:
 	refresh_time()
 	_date.text = "%s %d %s" % [Calendar.weekday_name(Calendar.weekday()).substr(0, 3),
 			Calendar.day_of_season(), Calendar.season_name(Calendar.season())]
-	_season.texture = StatusIcons.season(Calendar.season())
 	_weather.texture = StatusIcons.weather(Weather.today)
 	var feast := Calendar.festival_today()
 	if feast:
@@ -67,25 +65,18 @@ func _build() -> void:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 1)
 	add_child(column)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 2)
 	_time = Label.new()
+	_time.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_weather = _icon()
-	column.add_child(_row(_time, _weather))
+	top.add_child(_time)
+	top.add_child(_weather)
+	column.add_child(top)
 	_date = Label.new()
-	_season = _icon()
-	column.add_child(_row(_date, _season))
-	_marker = Label.new()
-	_marker.theme_type_variation = &"HeaderLabel"
-	_marker.add_theme_font_size_override("font_size", 8)
+	column.add_child(_date)
+	_marker = UIText.label("", &"AccentLabel")
 	column.add_child(_marker)
-
-
-func _row(label: Label, icon: TextureRect) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
-	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(label)
-	row.add_child(icon)
-	return row
 
 
 func _icon() -> TextureRect:

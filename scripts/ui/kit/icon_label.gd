@@ -39,11 +39,6 @@ func set_content(new_icon: Texture2D, new_text: String) -> void:
 	text = new_text
 
 
-## Tint the text, e.g. UIPalette.INK_DISABLED for a locked entry.
-func set_text_color(color: Color) -> void:
-	_label.add_theme_color_override("font_color", color)
-
-
 ## The inner Label, for wrapping or size overrides.
 func label() -> Label:
 	return _label

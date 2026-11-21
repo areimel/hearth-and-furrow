@@ -17,7 +17,6 @@ func _ready() -> void:
 	_amount = IconLabel.new()
 	row.add_child(_amount)
 	_delta = Label.new()
-	_delta.add_theme_font_size_override("font_size", 8)
 	_delta.visible = false
 	row.add_child(_delta)
 	Economy.coins_changed.connect(_on_coins_changed)
@@ -45,9 +44,8 @@ func _on_coins_changed(coins: int, delta: int) -> void:
 	_amount.set_content(StatusIcons.coin(), str(coins))
 	if delta == 0:
 		return
-	var color := UIPalette.MOSS if delta > 0 else UIPalette.CRIMSON
 	_delta.text = "%+d" % delta
-	_delta.add_theme_color_override("font_color", color)
+	_delta.theme_type_variation = &"GoodLabel" if delta > 0 else &"WarnLabel"
 	_delta.modulate.a = 1.0
 	_delta.visible = true
 	if _tween:

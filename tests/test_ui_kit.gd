@@ -62,3 +62,33 @@ func test_glyphs_resolve_for_known_and_generic_actions() -> void:
 	check(InputGlyphs.texture_for(&"menu") != null, "menu gamepad glyph")
 	InputGlyphs.controller_connected = false
 	check(InputGlyphs.texture_for(&"no_such_action") == null, "unknown action gives null")
+
+
+func test_glyphs_follow_the_last_used_device() -> void:
+	InputGlyphs.controller_connected = false
+	var pad := InputEventJoypadButton.new()
+	check(InputGlyphs.note_event(pad), "pad button switches to pad glyphs")
+	check(InputGlyphs.controller_connected, "pad is current")
+	check(not InputGlyphs.note_event(pad), "same device again changes nothing")
+	var key := InputEventKey.new()
+	check(InputGlyphs.note_event(key), "a key switches back")
+	check(not InputGlyphs.controller_connected, "keyboard is current")
+	var drift := InputEventJoypadMotion.new()
+	drift.axis_value = 0.1
+	check(not InputGlyphs.note_event(drift), "stick drift is ignored")
+	InputGlyphs.controller_connected = true
+	check(InputGlyphs.texture_for(&"day_change") != null, "keyboard-only action falls back to its key")
+	check(InputGlyphs.texture_for(&"tool_forward") != InputGlyphs.texture_for(&"menu"), "pad glyphs differ per button")
+	InputGlyphs.controller_connected = false
+
+
+func test_list_detail_and_detail_pane_build_and_hide_empty_parts() -> void:
+	var pane := DetailPane.new(100)
+	var columns := ListDetail.new(80, pane, 4)
+	tree.root.add_child(columns)
+	columns.menu.set_entries([{"text": "One", "payload": 1}] as Array[Dictionary])
+	eq(columns.menu.max_rows, 4, "rows")
+	pane.show_info("Title", "", [], {}, "Missing logs")
+	eq((pane.get_child(1) as Label).visible, false, "empty description hidden")
+	eq((pane.get_child(5) as Label).text, "Missing logs", "note shown")
+	columns.queue_free()

@@ -31,7 +31,6 @@ func show_items(items: Dictionary, check_have: bool = false) -> void:
 		slot.set_item(id, need)
 		if check_have:
 			var have := Inventory.count(id)
-			slot.set_count_text("%d/%d" % [have, need],
-					UIPalette.CRIMSON if have < need else UIPalette.PARCHMENT_LIGHT)
+			slot.set_count_text("%d/%d" % [have, need], have < need)
 			slot.dimmed = have < need
 		add_child(slot)

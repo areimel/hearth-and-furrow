@@ -259,7 +259,7 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   *before* the level exists. It enables `SaveManager.autosave_enabled`, adds a `PlayerState` provider (key `player`: highlighter) to the
   Level, shows a "Saved" toast after the morning fade-in, and hooks any node with signals `save_and_quit_requested` /
   `quit_requested` (group `GameMenu`) to `save_and_quit()` / `quit_to_title()` (no save).
-- **Boot**: main scene is `scenes/ui/title.tscn`. Scenes that boot straight into the level (tests, `tools/*`) never enable autosave.
+- **Boot**: main scene is `scenes/ui/title_screen.tscn`. Scenes that boot straight into the level (tests, `tools/*`) never enable autosave.
 
 ## Quests (additions by the quests branch)
 - **QuestData** new fields: `sequential` (conditions are steps done in order; finished steps
@@ -304,3 +304,27 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   only the highest tier reached pays, and only if the player came (table, greeting or gift).
 - **FestivalScreen** (`scenes/ui/festival_screen.tscn`, group `FestivalScreen`): opened by
   the feast table; instanced under `Menus` on demand if the HUD has none.
+
+## UI kit and screens (ui-consistency)
+- **Theme** (`tools/build_theme.gd` -> `scenes/ui/game_theme.tres`): no script sets a font colour or size. Use type
+  variations: `HeaderLabel`, `SmallLabel` (resized by Large text), `HudLabel`, `NoteLabel` (wrapped body), `HintLabel` (dim
+  helper text), `AccentLabel` (small rust), `WarnLabel` (shortfalls, refusals), `GoodLabel` (gains, ready), `CountLabel` /
+  `CountShortLabel` (slot corner number), `ListEntry` / `ListEntryGrey`, `TabButton` / `TabButtonRaised`. The small ones derive
+  from `SmallLabel`, so Large text scales them. `UIText.label(text, variation, wrap_width)` makes a themed (and wrapped) Label.
+- **UIText**: `coins(n)` for sentences ("12 coins"), `price(n)` for tight rows and toasts ("12c"), `minutes(n)`, `label(...)`.
+- **List + detail screens**: `ListDetail.new(list_width, detail, max_rows)` (`.menu` is the ListMenu) beside a `DetailPane`
+  (`show_info(title, desc, facts, needs, note, makes)`; `needs` is counted against the Inventory, empty parts hide).
+  CraftingScreen, ShopScreen (buy side and sell side), BuildMenu and FestivalScreen use them with `UIScreen.build_modal`.
+- **TabStrip** reads its back / forward actions itself while visible and emits `tab_stepped(index)`; owners
+  (GameMenu, ShopScreen, AlmanackTab) connect it and call `select()`. `set_hint_actions` changes glyphs and keys together.
+- **Glyphs**: `InputGlyphs.controller_connected` means "the pad was used last". `InputGlyphs.note_event(event)` (called from
+  `HUD._input`) flips it and returns true on a change; HUD then calls `refresh_glyphs()` on group `InputGlyphs.GROUP`
+  (`KeyHints`, `TabStrip`, `Prompt`, `DialogueBox` join it). Pad icons come from the InputMap binding of the action (faces,
+  shoulders, triggers, sticks, d-pad, start/back); an action with no pad binding shows its key. Keyboard-only actions
+  need no entry.
+- **Menu scenes**: `scenes/ui/game_menu.tscn` (class `GameMenu`), `scenes/ui/title_screen.tscn` (class `TitleScreen`).
+- **Journal**: each quest shows title, giver, description, conditions with live `n/m`, "Ready to hand in - see <giver>",
+  `QuestReward.describe()` rewards and, once complete, `perk_text`. A sequential quest shows steps `0..current_step`.
+- **Almanack** has three pages: Almanack (forecast saying + `Weather.outlook_text()` + `RiskSystem.advice()` when a RiskSystem
+  is in the tree, next feast with its asks or reminder), Discoveries, and Lore (`QuestData.note` for started quests,
+  `FestivalData.note` for feasts of this season or already past, `data/almanack.gd` CHAINS for chains whose final good was crafted).
