@@ -14,12 +14,12 @@ Rules for contributors (human or agent):
 - [x] 2. Headless check + test tooling (`tools/check.sh`, `tests/`)
 
 ## Wave 1 — spine
-- [ ] 3. Remove legacy course content
-- [ ] 4. 320x180 pixel-perfect display and theme
-- [ ] 5. Content registry and typed data resources
+- [x] 3. Remove legacy course content
+- [x] 4. 320x180 pixel-perfect display and theme
+- [x] 5. Content registry and typed data resources
 - [ ] 6. Game clock, calendar, day-end pipeline
 - [ ] 7. Slot inventory, hotbar-driven player, UI kit
-- [ ] 8. Split level into farm grid, world state, mediator
+- [x] 8. Split level into farm grid, world state, mediator
 
 ## Wave 2 — systems
 - [ ] 9. Six Tudor crops (field/garden rules, weeds)
