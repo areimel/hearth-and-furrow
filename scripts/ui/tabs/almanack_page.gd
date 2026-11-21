@@ -16,7 +16,9 @@ const WEATHER_NAMES: Dictionary = {
 var _date: Label
 var _today: IconLabel
 var _forecast: Label
+var _advice: Label
 var _feast: Label
+var _asks: Label
 var _grid: CalendarGrid
 var _sow: HFlowContainer
 var _sow_title: Label
@@ -43,7 +45,9 @@ func _ready() -> void:
 	_today = IconLabel.new()
 	facts.add_child(_today)
 	_forecast = _text(facts)
+	_advice = _text(facts, &"HintLabel")
 	_feast = _text(facts)
+	_asks = _text(facts, &"HintLabel")
 	var calendar := VBoxContainer.new()
 	calendar.add_theme_constant_override("separation", 1)
 	top.add_child(calendar)
@@ -61,14 +65,20 @@ func _ready() -> void:
 func refresh() -> void:
 	_date.text = Calendar.date_string()
 	_today.set_content(StatusIcons.weather(Weather.today), "Today: %s" % WEATHER_NAMES[Weather.today])
-	_forecast.text = SAYINGS[Weather.forecast]
+	_forecast.text = "%s %s" % [SAYINGS[Weather.forecast], Weather.outlook_text()]
+	_advice.text = _reeve_advice()
+	_advice.visible = not _advice.text.is_empty()
 	var feast := next_feast()
+	_asks.text = ""
 	if feast.is_empty():
 		_feast.text = "No feast is kept in this reckoning."
 	else:
 		var days: int = feast["days"]
-		_feast.text = "Next feast: %s, %s." % [feast["festival"].display_name,
+		var festival: FestivalData = feast["festival"]
+		_feast.text = "Next feast: %s, %s." % [festival.display_name,
 			"today" if days == 0 else "in %d day%s" % [days, "" if days == 1 else "s"]]
+		_asks.text = festival.reminder if days == 1 else feast_asks(festival)
+	_asks.visible = not _asks.text.is_empty()
 	_grid.show_season(Calendar.season(), Calendar.day_of_season())
 	_fill_sow()
 
@@ -87,6 +97,14 @@ static func next_feast() -> Dictionary:
 	return best
 
 
+## What a feast table hopes for, e.g. "Asked: Green boughs 6, Rushes to strew 6" ("" if nothing).
+static func feast_asks(festival: FestivalData) -> String:
+	var parts: Array[String] = []
+	for ask in festival.asks:
+		parts.append("%s %d" % [ask.text, ask.amount])
+	return "Asked: " + ", ".join(parts) if not parts.is_empty() else ""
+
+
 ## Crops that grow in the current season, in Content order.
 static func sowable_crops() -> Array[CropData]:
 	var out: Array[CropData] = []
@@ -94,6 +112,12 @@ static func sowable_crops() -> Array[CropData]:
 		if crop.grows_in(Calendar.season()):
 			out.append(crop)
 	return out
+
+
+# The reeve's hint from the level's RiskSystem, "" when there is none (menu outside a level).
+func _reeve_advice() -> String:
+	var found := get_tree().root.find_children("*", "RiskSystem", true, false)
+	return (found[0] as RiskSystem).advice() if not found.is_empty() else ""
 
 
 func _fill_sow() -> void:
@@ -116,10 +140,7 @@ func _chip(text: String) -> void:
 
 
 func _text(parent: Control, variation: StringName = &"") -> Label:
-	var label := Label.new()
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var label := UIText.label("", variation, 60)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if variation != &"":
-		label.theme_type_variation = variation
 	parent.add_child(label)
 	return label
