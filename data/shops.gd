@@ -35,13 +35,14 @@ const ROWS: Dictionary = {
 		buys = [{ids = [&"ale", &"barley", &"malt"], factor = PREMIUM}]},
 	&"miller": {name = "The Mill", keeper = &"miller",
 		sells = [
-			{item = &"flour", price = 26, stock = 12},
-			{id = &"mill_grain", item = &"flour", label = "Mill my grain", price = 2,
+			{item = &"flour", price = 8, stock = 12},
+			{id = &"mill_grain", item = &"flour", label = "Mill my grain", price = 1,
 				requires = {&"grain": 1}},
 		],
 		buys = [{ids = [&"grain", &"wheat_sheaf", &"bread"]}]},
 	&"shepherd": {name = "Shepherd's Fold", keeper = &"shepherd",
 		sells = [{animal = &"cow", stock = 1}, {animal = &"sheep", stock = 2},
-			{animal = &"chicken", stock = 3}],
+			{animal = &"chicken", stock = 3},
+			{item = &"straw", price = 2, stock = 40}, {item = &"grain", price = 3, stock = 20}],
 		buys = [{ids = [&"fleece", &"milk", &"cheese", &"butter"], factor = PREMIUM}]},
 }

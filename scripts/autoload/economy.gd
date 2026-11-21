@@ -12,6 +12,8 @@ var coins: int = Balance.START_COINS
 
 ## Units sold today per ware, "shop/ware" -> count; cleared when the day ends (restock).
 var _sold_today: Dictionary = {}
+## Units of each item id sold to any shop today; later units fetch less (see unit_demand()).
+var _demand_today: Dictionary = {}
 
 
 func _ready() -> void:
@@ -78,17 +80,6 @@ func buy(id: StringName, amount: int = 1) -> bool:
 	return true
 
 
-## Sells `amount` of an item from the Inventory. Returns coins earned (0 = nothing sold).
-func sell(id: StringName, amount: int = 1) -> int:
-	if amount <= 0 or sell_price(id) <= 0 or not Inventory.remove(id, amount):
-		return 0
-	var earned := sell_price(id) * amount
-	add_coins(earned)
-	Progress.record(&"sold", id, amount)
-	item_sold.emit(id, amount, earned)
-	return earned
-
-
 # ---------------------------------------------------------------- shops
 
 ## Units left today of a ware, or -1 if it is unlimited.
@@ -105,13 +96,31 @@ func shop_buy_price(_shop: ShopData, entry: Dictionary) -> int:
 	return price if price >= 0 else ShopDeals.default_price(entry)
 
 
-## Coins `shop` pays for one `item_id` (base x the shop's factor x market-day bonus);
-## 0 if the keeper will not buy it.
+## Coins `shop` pays for the next one `item_id` (base x the shop's factor x market-day
+## bonus x today's demand falloff); 0 if the keeper will not buy it.
 func shop_sell_price(shop: ShopData, item_id: StringName) -> int:
+	return shop_sell_quote(shop, item_id, 1)
+
+
+## Coins `shop` pays for `amount` of `item_id` sold now: each unit is worth a little less
+## once more than Balance.DEMAND_FULL_PRICE_UNITS of it were sold today.
+func shop_sell_quote(shop: ShopData, item_id: StringName, amount: int) -> int:
 	if not Content.has_item(item_id):
 		return 0
 	var item := Content.item(item_id)
-	return roundi(item.base_price * shop.buy_factor(item) * sell_multiplier())
+	var each := item.base_price * shop.buy_factor(item) * sell_multiplier()
+	var sold := int(_demand_today.get(item_id, 0))
+	var total := 0
+	for n in amount:
+		total += maxi(roundi(each * unit_demand(sold + n)), 1 if each > 0.0 else 0)
+	return total
+
+
+## Price factor of the (`sold_so_far` + 1)th unit of one item sold in a day: 1.0 for the
+## first Balance.DEMAND_FULL_PRICE_UNITS, then falling by DEMAND_STEP each, never below DEMAND_FLOOR.
+static func unit_demand(sold_so_far: int) -> float:
+	var over := sold_so_far - Balance.DEMAND_FULL_PRICE_UNITS + 1
+	return 1.0 if over <= 0 else maxf(1.0 - over * Balance.DEMAND_STEP, Balance.DEMAND_FLOOR)
 
 
 ## Why `entry` cannot be bought right now (locked, out of season, sold out, missing
@@ -157,8 +166,8 @@ func shop_buy(shop_id: StringName, entry_id: StringName) -> String:
 ## are taken from that Inventory slot (which must hold them) instead of the pack at large.
 func shop_sell(shop_id: StringName, item_id: StringName, amount: int = 1, slot: int = -1) -> int:
 	var shop := Content.shop(shop_id)
-	var price := shop_sell_price(shop, item_id) if shop else 0
-	if amount <= 0 or price <= 0:
+	var earned := shop_sell_quote(shop, item_id, amount) if shop else 0
+	if amount <= 0 or earned <= 0:
 		return 0
 	if slot >= 0:
 		if Inventory.slot_id(slot) != item_id or Inventory.slot_count(slot) < amount:
@@ -166,10 +175,11 @@ func shop_sell(shop_id: StringName, item_id: StringName, amount: int = 1, slot: 
 		Inventory.remove_at(slot, amount)
 	elif not Inventory.remove(item_id, amount):
 		return 0
-	add_coins(price * amount)
+	_demand_today[item_id] = int(_demand_today.get(item_id, 0)) + amount
+	add_coins(earned)
 	Progress.record(&"sold", item_id, amount)
-	item_sold.emit(item_id, amount, price * amount)
-	return price * amount
+	item_sold.emit(item_id, amount, earned)
+	return earned
 
 
 func _key(shop_id: StringName, entry_id: StringName) -> String:
@@ -186,17 +196,20 @@ func _in_season(entry: Dictionary) -> bool:
 
 func _on_day_ending(_day: int) -> void:
 	_sold_today.clear()
+	_demand_today.clear()
 
 
 func reset() -> void:
 	var delta := Balance.START_COINS - coins
 	coins = Balance.START_COINS
 	_sold_today.clear()
+	_demand_today.clear()
 	coins_changed.emit(coins, delta)
 
 
 func to_dict() -> Dictionary:
-	return {"coins": coins, "sold_today": _sold_today.duplicate()}
+	return {"coins": coins, "sold_today": _sold_today.duplicate(),
+		"demand_today": _demand_today.duplicate()}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -206,4 +219,8 @@ func from_dict(data: Dictionary) -> void:
 	var saved: Dictionary = data.get("sold_today", {})
 	for key: Variant in saved:
 		_sold_today[str(key)] = int(saved[key])
+	_demand_today.clear()
+	var demand: Dictionary = data.get("demand_today", {})
+	for key: Variant in demand:
+		_demand_today[StringName(str(key))] = int(demand[key])
 	coins_changed.emit(coins, coins - before)

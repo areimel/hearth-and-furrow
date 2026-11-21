@@ -3,6 +3,19 @@ extends RefCounted
 ## Records problems (duplicate ids, bad texture paths) instead of failing.
 
 const P := preload("res://data/paths.gd")
+const StoryRows := preload("res://scripts/autoload/content_story_rows.gd")
+const ItemsTools := preload("res://data/items_tools.gd")
+const ItemsGoods := preload("res://data/items_goods.gd")
+const Crops := preload("res://data/crops.gd")
+const Recipes := preload("res://data/recipes.gd")
+const Stations := preload("res://data/stations.gd")
+const Animals := preload("res://data/animals.gd")
+const Gatherables := preload("res://data/gatherables.gd")
+const Npcs := preload("res://data/npcs.gd")
+const Quests := preload("res://data/quests.gd")
+const Festivals := preload("res://data/festivals.gd")
+const ToolTiers := preload("res://data/tool_tiers.gd")
+const Shops := preload("res://data/shops.gd")
 
 ## Paths that do not exist, outside the placeholder folder: content errors.
 var bad_textures: Array[String] = []
@@ -33,6 +46,30 @@ func texture(path: String, owner_id: StringName) -> Texture2D:
 	else:
 		bad_textures.append("%s: missing texture %s" % [owner_id, path])
 	return placeholder()
+
+
+## Builds every resource table from the data/*.gd rows: table name (&"items", &"crops",
+## &"recipes", &"stations", &"animals", &"gatherables", &"npcs", &"quests", &"festivals",
+## &"tool_tiers", &"shops") -> {id: resource}.
+func build_all() -> Dictionary:
+	var item_rows: Dictionary = {}
+	merge(item_rows, ItemsTools.ROWS, "item")
+	merge(item_rows, ItemsGoods.ROWS, "item")
+	var specs: Array = [
+		[&"items", item_rows, item], [&"crops", Crops.ROWS, crop],
+		[&"recipes", Recipes.ROWS, recipe], [&"stations", Stations.ROWS, station],
+		[&"animals", Animals.ROWS, animal], [&"gatherables", Gatherables.ROWS, gatherable],
+		[&"npcs", Npcs.ROWS, npc], [&"quests", Quests.ROWS, StoryRows.quest],
+		[&"festivals", Festivals.ROWS, StoryRows.festival],
+		[&"tool_tiers", ToolTiers.ROWS, tool_tier], [&"shops", Shops.ROWS, shop],
+	]
+	var tables: Dictionary = {}
+	for spec: Array in specs:
+		var table: Dictionary = {}
+		for id: StringName in spec[1]:
+			table[id] = (spec[2] as Callable).call(id, spec[1][id])
+		tables[spec[0]] = table
+	return tables
 
 
 ## Merges several ROWS tables into `into`, reporting duplicate ids.
@@ -113,6 +150,8 @@ func animal(id: StringName, row: Dictionary) -> AnimalData:
 	res.product_amount = row.get("amount", 1)
 	res.product_days = row.get("every", 1)
 	res.feed_item = row.get("feed", &"")
+	res.collect_verb = row.get("verb", "")
+	res.feed_seasons.assign(row.get("feed_seasons", []))
 	res.sprite_path = row.get("sprite", "")
 	res.sprite = texture(res.sprite_path, id)
 	return res
@@ -158,81 +197,6 @@ func npc(id: StringName, row: Dictionary) -> NPCData:
 	res.faceset_path = row.get("faceset", "")
 	res.sprite = texture(res.sprite_path, id)
 	res.faceset = texture(res.faceset_path, id)
-	return res
-
-
-func quest(id: StringName, row: Dictionary) -> QuestData:
-	var res := QuestData.new()
-	res.id = id
-	res.title = row.get("title", String(id))
-	res.description = row.get("desc", "")
-	res.giver = row.get("giver", &"")
-	res.requires.assign(row.get("requires", []))
-	for c: Dictionary in row.get("conditions", []):
-		res.conditions.append(condition(c))
-	res.rewards.assign(rewards(row.get("rewards", [])))
-	res.sequential = row.get("sequential", false)
-	res.auto_start = row.get("auto", false)
-	res.note = row.get("note", "")
-	res.chain = row.get("chain", &"")
-	res.crops.assign(row.get("crops", []))
-	var perk: Dictionary = row.get("perk", {})
-	res.perk_text = perk.get("text", "")
-	res.perk_gives.assign(perk.get("gives", {}))
-	res.perk_takes.assign(perk.get("takes", {}))
-	return res
-
-
-## A QuestCondition from {kind, target, targets, amount, text}.
-func condition(c: Dictionary) -> QuestCondition:
-	var cond := QuestCondition.new()
-	cond.kind = c.get("kind", &"")
-	cond.target = c.get("target", &"")
-	cond.targets.assign(c.get("targets", []))
-	cond.amount = c.get("amount", 1)
-	cond.text = c.get("text", "")
-	return cond
-
-
-## QuestRewards from [{kind, target, amount, text}].
-func rewards(rows: Array) -> Array[QuestReward]:
-	var out: Array[QuestReward] = []
-	for r: Dictionary in rows:
-		var reward := QuestReward.new()
-		reward.kind = r.get("kind", &"")
-		reward.target = r.get("target", &"")
-		reward.amount = r.get("amount", 1)
-		reward.text = r.get("text", "")
-		out.append(reward)
-	return out
-
-
-func festival(id: StringName, row: Dictionary) -> FestivalData:
-	var res := FestivalData.new()
-	res.id = id
-	res.display_name = row.get("name", String(id))
-	res.description = row.get("desc", "")
-	res.season = row.get("season", G.Season.SPRING)
-	res.day = row.get("day", 1)
-	res.location = row.get("loc", &"")
-	res.start_hour = row.get("start", 9)
-	res.end_hour = row.get("end", 18)
-	res.shops_closed = row.get("shops_closed", true)
-	res.note = row.get("note", "")
-	res.gather_place = row.get("gather", res.location)
-	res.spot_prefix = row.get("spots", "spot_")
-	res.announce = row.get("announce", "")
-	res.reminder = row.get("reminder", "")
-	for a: Dictionary in row.get("asks", []):
-		var ask := condition(a)
-		ask.kind = QuestCondition.DELIVER_ITEM
-		res.asks.append(ask)
-	for t: Dictionary in row.get("tiers", []):
-		var tier := RewardTier.new()
-		tier.min_count = t.get("min", 0)
-		tier.text = t.get("text", "")
-		tier.rewards.assign(rewards(t.get("rewards", [])))
-		res.tiers.append(tier)
 	return res
 
 

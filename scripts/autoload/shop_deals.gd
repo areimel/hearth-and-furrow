@@ -117,10 +117,9 @@ static func blocked(entry: Dictionary) -> String:
 			return "You have no tool to upgrade"
 		if not Progress.has_flag(plan["flag"]):
 			return "Not yet available"
-	var needs_map := needs(entry)
-	for id: StringName in needs_map:
-		if not Inventory.has(id, int(needs_map[id])):
-			return "Need %d %s" % [needs_map[id], Content.item(id).display_name]
+	var lacking := Loot.shortfall(needs(entry))
+	if not lacking.is_empty():
+		return lacking
 	match entry["kind"]:
 		&"animal":
 			var herd := livestock()
@@ -154,8 +153,7 @@ static func deliver(entry: Dictionary) -> String:
 static func _upgrade(plan: Dictionary) -> String:
 	var slot: int = plan["slot"]
 	var to: ItemData = plan["to"]
-	for id: StringName in plan["items"]:
-		Inventory.remove(id, int(plan["items"][id]))
+	Loot.take(plan["items"])
 	Inventory.remove_at(slot, 1)
 	Inventory.add(to.id, 1)
 	for i in Inventory.size():
@@ -168,8 +166,7 @@ static func _upgrade(plan: Dictionary) -> String:
 # Removes `take`, adds `give`; restores the Inventory and fails if `give` does not fit.
 static func _exchange(take: Dictionary, give: Dictionary) -> String:
 	var snapshot := Inventory.to_dict()
-	for id: StringName in take:
-		Inventory.remove(id, int(take[id]))
+	Loot.take(take)
 	for id: StringName in give:
 		if Inventory.add(id, int(give[id])) > 0:
 			Inventory.from_dict(snapshot)

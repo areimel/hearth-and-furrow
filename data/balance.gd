@@ -1,6 +1,23 @@
 class_name Balance extends RefCounted
 ## Global tuning numbers. Const-only. Per-item / per-crop numbers live on their own rows,
 ## not here. Access as `Balance.X` from anywhere.
+##
+## ECONOMY YARDSTICKS (the targets every price in data/ is tuned against; tools/year_sim.gd
+## plays 112 days and fails if the purse leaves its bands, tests/test_balance.gd checks the rows):
+##  - Raw produce sells low; every processing step adds value; a finished good (bread, butter,
+##    cheese, ale, linen) is worth 2.5-4x its raw inputs. Linen cloth is the premium line, ale a
+##    high-value staple, bread a modest one. Dairy: cheese is the main earner (3 milk, overnight,
+##    no hands), butter the small premium line (best unit price per milk, but it is made less).
+##  - Pace of a diligent player (the sim): first spring ends with ~200-650 coins in the purse, the
+##    first iron-shod tool lands mid/late spring (day ~15-20), the first bought animal in summer,
+##    all five tools upgraded by autumn and a small herd by winter, year-end purse ~1.5-2.5k.
+##  - Crops: each ripens at least twice in a season; coins per tile-day (chain value minus seed)
+##    stay within 2x between the best and worst crop; garden crops (daily watering) pay as well
+##    as field crops. Selling many of one item in a day pays less each (DEMAND_*), so spreading
+##    goods over days, items and the weekly market beats dumping 50 of one thing.
+##  - Winter is for animals and stored goods: no crop grows, animals need straw/grain (for sale
+##    at the shepherd), and trout (fishing) always sells. Five trout re-buy the starting seed.
+## To retune: change a price row, run `tools/check.sh --full`, read the SEASON lines.
 
 # --- World ---
 const TILE_SIZE: int = 16
@@ -55,6 +72,11 @@ const BLIGHT_YIELD_FACTOR: float = 0.5
 const START_COINS: int = 100
 ## Sell prices are multiplied by this on market day (see Calendar.is_market_day()).
 const MARKET_DAY_SELL_BONUS: float = 1.25
+## Demand: the first DEMAND_FULL_PRICE_UNITS of one item sold in a day pay full price, each
+## further unit pays DEMAND_STEP less than the one before, down to DEMAND_FLOOR of full.
+const DEMAND_FULL_PRICE_UNITS: int = 6
+const DEMAND_STEP: float = 0.1
+const DEMAND_FLOOR: float = 0.3
 
 # --- Relationships ---
 const MAX_HEARTS: int = 10
@@ -141,3 +163,16 @@ const STORM_LOSS_ROLL_MIN: float = 0.5
 const LOSS_MEMORY_DAYS: int = 7
 ## Crop ids remembered per cell for rotation.
 const ROTATION_MEMORY: int = 2
+
+# --- Livestock care ---
+## Mood runs 0..ANIMAL_MOOD_MAX; below ANIMAL_MOOD_LOW the product takes one extra day.
+const ANIMAL_MOOD_MAX: int = 100
+const ANIMAL_MOOD_START: int = 60
+const ANIMAL_MOOD_LOW: int = 30
+## Mood change: hand-fed, grazing on a day feed is not needed, petted, left unfed.
+const ANIMAL_MOOD_FED: int = 4
+const ANIMAL_MOOD_GRAZED: int = 1
+const ANIMAL_MOOD_PET: int = 6
+const ANIMAL_MOOD_UNFED: int = -4
+## Animals standing in the pen at the start of a new game: animal id -> count.
+const STARTER_HERD: Dictionary = {&"cow": 1, &"sheep": 1, &"chicken": 2}

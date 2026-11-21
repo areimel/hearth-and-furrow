@@ -1,27 +1,26 @@
 extends Node
-## Soak test: a scripted farmer plays 112 days (four seasons) in the real level through
-## the public APIs only, saving and reloading at the end of every season and checking that
-## the state survived. Run: godot --path . --headless res://tools/year_sim.tscn
+## Soak test: a scripted farmer (tools/sim_farmer.gd) plays 112 days (four seasons) in the
+## real level through the public APIs only, saving and reloading at the end of every season
+## and checking that the state survived. It is also the economy yardstick: the purse at the
+## end of spring and of the year must land in the bands below (targets: data/balance.gd).
+## Run: godot --path . --headless res://tools/year_sim.tscn
 ## Prints SIM/SEASON/YEAR lines and exits non-zero on any failed check or engine ERROR.
-## Features that other branches add (shops, gathering, risks, festivals, build mode) are
-## detected by node name and reported; they are only used through public methods.
 
 const DAYS := 112
 const SEASON_DAYS := 28
 const TEMP_PATH := "user://year_sim.json"
 const LEVEL_SCENE := "res://scenes/levels/level.tscn"
 const OPTIONAL_NODES: Array[String] = ["Shops", "Gathering", "Foraging", "Risks", "Festivals", "BuildMode"]
-const SEED_RESERVE := 30  ## Coins kept back when buying seed.
-const PLOT_COUNT := 18
+## Generous bands: the sim is random (weather, forage), the economy must stay inside them.
+const SPRING_PURSE_MIN := 100
+const SPRING_PURSE_MAX := 1000
+const YEAR_PURSE_MIN := 700
+const YEAR_PURSE_MAX := 5000
 
 var _level: Level
+var _farmer := SimFarmer.new()
 var _failures: Array[String] = []
 var _errors := ErrorCounter.new()
-var _plots: Array[Vector2i] = []
-var _reaped := 0
-var _products := 0
-var _sold_coins := 0
-var _quests := 0
 var _season_start := {"crafted": 0, "reaped": 0, "products": 0, "sold": 0}
 
 
@@ -53,14 +52,24 @@ func _ready() -> void:
 			found.append(node_name)
 	print("SIM start coins=%d optional_features=%s" % [Economy.coins, found if not found.is_empty() else "none"])
 	for day in DAYS:
-		_play_day()
+		_farmer.play_day()
 		GameClock.advance_day()
 		await get_tree().process_frame
 		if (day + 1) % SEASON_DAYS == 0:
 			await _season_end(day + 1)
-	var crafted := _crafted_total()
+	_finish(saved_path)
+
+
+func _finish(saved_path: String) -> void:
 	print("YEAR days=%d coins=%d goods_made=%d crops_reaped=%d products=%d quests=%d errors=%d" % [
-			GameClock.day_index, Economy.coins, crafted, _reaped, _products, _quests, _errors.count])
+			GameClock.day_index, Economy.coins, _crafted_total(), _farmer.reaped, _farmer.products,
+			_farmer.quests, _errors.count])
+	print("YEAR first_upgrade_day=%d first_animal_day=%d upgrades=%d animals_bought=%d" % [
+			_farmer.first_upgrade_day, _farmer.first_animal_day, _farmer.upgrades, _farmer.animals_bought])
+	print("YEAR sold_for_by_item=%s" % [_farmer.sold_by_item])
+	_check(Economy.coins >= YEAR_PURSE_MIN and Economy.coins <= YEAR_PURSE_MAX,
+			"year-end purse %d outside %d..%d" % [Economy.coins, YEAR_PURSE_MIN, YEAR_PURSE_MAX])
+	_check(_farmer.upgrades == Content.tool_kinds().size(), "only %d tool upgrades in a year" % _farmer.upgrades)
 	_check(GameClock.day_index == DAYS, "ran %d days, clock says %d" % [DAYS, GameClock.day_index])
 	_check(_errors.count == 0, "engine errors: %s" % [_errors.first])
 	SaveManager.delete_save()
@@ -83,126 +92,27 @@ func _spawn() -> void:
 	for i in 3:
 		await get_tree().process_frame
 	GameClock.stop()
-	_find_plots()
-
-
-func _find_plots() -> void:
-	if not _plots.is_empty():
-		return  # keep the same plots after a reload (they are occupied by then)
-	var farm := _level.farm_grid
-	for y in range(-12, -3):
-		for x in range(5, 22):
-			var cell := Vector2i(x, y)
-			if _plots.size() < PLOT_COUNT and farm.is_tool_valid(G.ToolKind.HOE, cell) \
-					and not farm.is_occupied(cell):
-				_plots.append(cell)
-	_check(_plots.size() >= 8, "found only %d farmable plots" % _plots.size())
-
-
-# ---------------------------------------------------------------- a day's chores
-
-func _play_day() -> void:
-	_reap_and_sow()
-	_run_stations()
-	_tend_animals()
-	_social_and_quests()
-	_sell_surplus()
-	for crop in _level.farm_grid.crop_field.crops():
-		_level.farm_grid.water(crop.cell)
-
-
-func _reap_and_sow() -> void:
-	var field := _level.farm_grid.crop_field
-	for crop in field.ripe_crops():
-		_reaped += field.reap(crop.cell)
-	var season := Calendar.season()
-	var options: Array[CropData] = []
-	for crop_row in Content.crops():
-		if crop_row.grows_in(season):
-			options.append(crop_row)
-	if options.is_empty():
-		return
-	var pick := 0
-	for cell in _plots:
-		if field.crop_at(cell) != null:
-			continue
-		for attempt in options.size():
-			var row := options[(pick + attempt) % options.size()]
-			if not Inventory.has(row.seed_item, 1) and Economy.coins > SEED_RESERVE:
-				Economy.buy(row.seed_item, 1)
-			if Inventory.has(row.seed_item, 1):
-				if not _level.farm_grid.is_tilled(cell):
-					_level.farm_grid.till(cell)
-				if field.sow(cell, row.id) != null:
-					Inventory.remove(row.seed_item, 1)
-					pick += 1
-				break
-
-
-func _run_stations() -> void:
-	var works := _level.get_node_or_null("Workstations") as Workstations
-	if works == null:
-		return
-	for station in works.stations():
-		station.collect()
-		for recipe in Content.recipes_for_station(station.station_id):
-			while station.can_start(recipe.id):
-				station.start_job(recipe.id)
-
-
-func _tend_animals() -> void:
-	var herd := _level.get_node_or_null("Livestock") as Livestock
-	if herd == null:
-		return
-	for animal in herd.animals():
-		if animal.product_ready and animal.collect():
-			_products += 1
-		if not Inventory.has(animal.data.feed_item, 1):
-			Economy.buy(animal.data.feed_item, 1)
-		animal.feed()
-		animal.pet()
-
-
-func _social_and_quests() -> void:
-	for npc in Content.npcs():
-		Relationships.talk(npc.id)
-	for quest in Content.quests():
-		if QuestManager.can_start(quest.id):
-			QuestManager.start(quest.id)
-		if QuestManager.is_active(quest.id) and QuestManager.is_ready(quest.id) \
-				and QuestManager.complete(quest.id):
-			_quests += 1
-
-
-## Sell everything that is neither seed, tool, animal feed nor a stockpile of recipe input.
-func _sell_surplus() -> void:
-	var feed: Array[StringName] = []
-	for animal_row in Content.animals():
-		feed.append(animal_row.feed_item)
-	for i in Inventory.size():
-		var id := Inventory.slot_id(i)
-		if id == &"" or id in feed:
-			continue
-		var item := Content.item(id)
-		if item == null or item.is_tool() or item.is_seed() or not item.is_sellable():
-			continue
-		var keep := 8 if not Content.recipes_using(id).is_empty() else 0
-		var surplus := Inventory.count(id) - keep
-		if surplus > 0:
-			_sold_coins += Economy.sell(id, surplus)
+	_farmer.level = _level
+	_farmer.find_plots()
+	_check(_farmer.plots.size() >= 8, "found only %d farmable plots" % _farmer.plots.size())
 
 
 # ---------------------------------------------------------------- season boundary
 
 func _season_end(day: int) -> void:
 	var name_of := Calendar.season_name(Calendar.season(day - 1))
-	print("SEASON %s day=%d coins=%d goods_made=%d crops_reaped=%d products=%d sold_for=%d" % [
+	print("SEASON %s day=%d coins=%d goods_made=%d crops_reaped=%d products=%d sold_for=%d upgrades=%d animals_bought=%d" % [
 			name_of, day, Economy.coins, _crafted_total() - _season_start["crafted"],
-			_reaped - _season_start["reaped"], _products - _season_start["products"],
-			_sold_coins - _season_start["sold"]])
-	_season_start = {"crafted": _crafted_total(), "reaped": _reaped, "products": _products,
-		"sold": _sold_coins}
-	_run_stations()  # leave jobs in flight so the reload has station state to preserve
+			_farmer.reaped - _season_start["reaped"], _farmer.products - _season_start["products"],
+			_farmer.sold_coins - _season_start["sold"], _farmer.upgrades, _farmer.animals_bought])
+	print("SEASON   sold: %s" % [_farmer.season_sales])
+	_farmer.season_sales.clear()
+	if day == SEASON_DAYS:
+		_check(Economy.coins >= SPRING_PURSE_MIN and Economy.coins <= SPRING_PURSE_MAX,
+				"spring-end purse %d outside %d..%d" % [Economy.coins, SPRING_PURSE_MIN, SPRING_PURSE_MAX])
+	_season_start = {"crafted": _crafted_total(), "reaped": _farmer.reaped,
+		"products": _farmer.products, "sold": _farmer.sold_coins}
+	_farmer.run_stations()  # leave jobs in flight so the reload has station state to preserve
 	await _save_and_reload(name_of)
 
 

@@ -6,7 +6,7 @@ extends RefCounted
 
 const ROWS: Dictionary = {
 	&"wooden": {name = "Wooden", rank = 1, next = &"iron_shod", area = 1, power = 1.0, bonus_logs = 0, fishing_ease = 1.0},
-	&"iron_shod": {name = "Iron-shod", rank = 2, coins = 250, items = {&"log": 5},
+	&"iron_shod": {name = "Iron-shod", rank = 2, coins = 550, items = {&"log": 5, &"stone": 3},
 		area = 2, power = 1.5, bonus_logs = 1, fishing_ease = 1.35},
 }
 
