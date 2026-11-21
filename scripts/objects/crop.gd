@@ -7,6 +7,10 @@ const Balance := preload("res://data/balance.gd")
 ## Pixel width of one growth frame in a crop sprite sheet.
 const FRAME_WIDTH: int = 16
 const WEED_COLOR := Color(0.28, 0.5, 0.2)
+const SPOT_WARNING := Color(0.62, 0.22, 0.08)
+const SPOT_BLIGHTED := Color(0.12, 0.06, 0.03)
+const SPOT_OFFSETS: Array[Vector2] = [Vector2(-3, -9), Vector2(2, -7), Vector2(-1, -5), Vector2(4, -11), Vector2(-4, -3), Vector2(1, -10)]
+const FLATTENED_COLOR := Color(0.85, 0.72, 0.45)
 const WEED_OFFSETS: Array[Vector2] = [Vector2(-5, 3), Vector2(4, 4), Vector2(0, 5)]
 
 ## Crop row id, e.g. &"wheat" (not the seed or harvest item id).
@@ -20,6 +24,11 @@ var weeds: int = 0
 var blighted: bool = false:
 	set(value):
 		blighted = value
+		_refresh()
+## Spots on the leaves: blight turns in a day unless the cell is hoed (treat()). Set by RiskSystem.
+var blight_warning: bool = false:
+	set(value):
+		blight_warning = value
 		_refresh()
 var data: CropData
 var _flattened: bool = false
@@ -43,7 +52,9 @@ func _ready() -> void:
 	if texture.get_width() % _frames != 0:  # sheet does not match the row: assume 16px frames
 		_frames = maxi(1, texture.get_width() / FRAME_WIDTH)
 	_sprite.texture = texture
+	_sprite.material = WorldSky.sway_material
 	_sprite.hframes = _frames
+	_sprite.show_behind_parent = true  # so weeds and blight spots draw over the plant
 	_sprite.centered = false
 	_sprite.offset = Vector2(-texture.get_width() / float(_frames) / 2.0, -texture.get_height() + 6.0)
 	_refresh()
@@ -84,9 +95,10 @@ func resolve_day(watered: bool, rng: RandomNumberGenerator) -> void:
 	_refresh()
 
 
-## Pull the weeds (hoe on the crop's cell).
+## Pull the weeds (hoe on the crop's cell); also cures a blight warning.
 func clear_weeds() -> void:
 	weeds = 0
+	blight_warning = false
 	_refresh()
 
 
@@ -111,6 +123,7 @@ func regrow() -> void:
 	age = maxi(0, data.days_to_mature - data.regrow_days)
 	weeds = 0
 	blighted = false
+	blight_warning = false
 	_flattened = false
 	_refresh()
 
@@ -130,13 +143,15 @@ func info_text() -> String:
 		parts.append("weedy")
 	if blighted:
 		parts.append("blighted")
+	elif blight_warning:
+		parts.append("spotted leaves, hoe it")
 	return "%s - %s" % [data.display_name, ", ".join(parts)]
 
 
 ## Save data: ids and plain values only.
 func to_dict() -> Dictionary:
 	return {"id": crop_id, "cell": [cell.x, cell.y], "age": age, "weeds": weeds,
-			"blighted": blighted, "flattened": _flattened}
+			"blighted": blighted, "flattened": _flattened, "blight_warning": blight_warning}
 
 
 ## Restore the state written by to_dict() (call after setup()).
@@ -145,10 +160,13 @@ func from_dict(saved: Dictionary) -> void:
 	weeds = int(saved.get("weeds", 0))
 	_flattened = bool(saved.get("flattened", false))
 	blighted = bool(saved.get("blighted", false))
+	blight_warning = bool(saved.get("blight_warning", false))
 	_refresh()
 
 
 func _draw() -> void:
+	if blight_warning or blighted:
+		_draw_spots()
 	for i in mini(weeds, WEED_OFFSETS.size()):
 		var at := WEED_OFFSETS[i]
 		draw_line(at, at + Vector2(-1, -3), WEED_COLOR, 1.0)
@@ -156,11 +174,19 @@ func _draw() -> void:
 		draw_line(at, at + Vector2(0, -4), WEED_COLOR, 1.0)
 
 
+## Speckles over the leaves: pale yellow on the warning day, dark brown once blighted.
+func _draw_spots() -> void:
+	var color := SPOT_BLIGHTED if blighted else SPOT_WARNING
+	for at in SPOT_OFFSETS:
+		draw_rect(Rect2(at, Vector2(2, 2)), color)
+
+
 func _refresh() -> void:
 	if _sprite == null or data == null:
 		return
 	var t := clampf(float(age) / float(maxi(1, data.days_to_mature)), 0.0, 1.0)
 	_sprite.frame = _frames - 1 if is_ripe() and not _flattened else int(t * (_frames - 1))
-	_sprite.modulate = Color(0.75, 0.62, 0.45) if blighted else Color.WHITE
+	_sprite.modulate = Color(0.75, 0.62, 0.45) if blighted else (FLATTENED_COLOR if _flattened else Color.WHITE)
 	_sprite.rotation = 1.2 if _flattened else 0.0
+	_sprite.material = null if _flattened else WorldSky.sway_material
 	queue_redraw()

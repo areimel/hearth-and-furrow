@@ -12,7 +12,7 @@ extends Node
 ##   --name NAME    file name without extension (default "shot")
 ##   --size WxH     window size, e.g. 1280x800 (default: project default)
 ##   --setup STEPS  comma-separated setup steps run once the scene is up, in order:
-##                  fishing | rain | storm | night | plants (sow all six crops under the player) | highlight | days:N | menu | <method on the scene>
+##                  fishing | rain | storm | night | noon | spring | summer | autumn | winter (season, any day 10) | plants (sow all six crops under the player) | risks (ripe wheat: normal, flattened, blight warning, blighted, weedy) | highlight | days:N | menu | <method on the scene>
 ##   --upscale N    also write NAME_xN.png, nearest-neighbour enlarged (default 4; 1 = off)
 ## The raw PNG is the base-resolution viewport (320x180, or 320x200 on 16:10 windows).
 
@@ -78,6 +78,14 @@ func _run_setup(step: String, scene: Node) -> void:
 					var cell := Vector2i(9 + i, -8)
 					level.farm_grid.till(cell)
 					level.farm_grid.crop_field.sow(cell, Content.crops()[i].id)
+		"noon":
+			GameClock.advance_minutes(5 * 60)
+		"spring", "summer", "autumn", "winter":
+			GameClock.day_index = Calendar.day_index_for(1, ["spring", "summer", "autumn", "winter"].find(step), 10)
+		"risks":
+			var level := scene as Level
+			if level:
+				_setup_risks(level)
 		"highlight":
 			var level := scene as Level
 			if level:
@@ -90,6 +98,24 @@ func _run_setup(step: String, scene: Node) -> void:
 				scene.call(step)
 			else:
 				push_warning("screenshot: unknown setup step '%s'" % step)
+
+
+func _setup_risks(level: Level) -> void:
+	for i in 5:
+		var cell := Vector2i(11 + i, -6)
+		level.farm_grid.till(cell)
+		var crop := level.farm_grid.crop_field.sow(cell, &"wheat")
+		crop.age = crop.data.days_to_mature
+		match i:
+			1:
+				crop.flatten()
+			2:
+				crop.blight_warning = true
+			3:
+				crop.blighted = true
+			4:
+				crop.weeds = 2
+		crop.call("_refresh")
 
 
 func _save() -> void:

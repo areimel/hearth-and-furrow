@@ -8,6 +8,8 @@ const Balance := preload("res://data/balance.gd")
 @export var grid: FarmGrid
 ## Parent of crop nodes (the level's y-sorted Objects/Crops).
 @export var container: Node2D
+## A crop was reaped from `cell` (RiskSystem records it for crop rotation).
+signal crop_reaped(cell: Vector2i, crop_id: StringName)
 
 var rng := RandomNumberGenerator.new()
 var _crops: Dictionary = {}  # Vector2i -> Crop
@@ -56,6 +58,7 @@ func reap(cell: Vector2i) -> int:
 	if crop == null or not crop.is_ripe():
 		return 0
 	var added := crop.collect()
+	crop_reaped.emit(cell, crop.crop_id)
 	if crop.data.regrow_days > 0 and not crop.is_flattened():
 		crop.regrow()
 	else:
