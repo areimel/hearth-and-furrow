@@ -22,16 +22,11 @@ func _ready() -> void:
 	add_to_group("Level")
 	GameClock.start()
 	player.interact_focus_changed.connect(_on_interact_focus_changed)
-	Input.joy_connection_changed.connect(_on_joy_connection_changed)
-	InputGlyphs.controller_connected = Input.get_connected_joypads().size() > 0
 	# Features start in tree order, so each can rely on the ones above it having claimed ground.
 	for child in get_children():
 		if child is LevelFeature:
 			(child as LevelFeature).start()
 
-
-func _on_joy_connection_changed(_device_id: int, connected: bool) -> void:
-	InputGlyphs.controller_connected = connected
 
 
 func _exit_tree() -> void:
@@ -167,18 +162,14 @@ func _on_interact_focus_changed(target: Interactable) -> void:
 	_show_interact_prompt()
 
 
-## Shows the focused interactable's prompt. Legacy callers may still publish the text as
-## meta `prompt_text` on the Interactable or its parent; the property wins when set.
+## Shows the focused interactable's prompt.
 func _show_interact_prompt(_text: String = "") -> void:
 	if is_building():
 		return  # BuildMode owns the prompt
 	if _focused == null or not is_instance_valid(_focused):
 		_prompt.hide_prompt()
 		return
-	var text: String = _focused.prompt_text
-	if text == "Use":
-		text = str(_focused.get_meta(&"prompt_text", _focused.get_parent().get_meta(&"prompt_text", "Use")))
-	_prompt.show_prompt(&"action", text)
+	_prompt.show_prompt(&"action", _focused.prompt_text)
 
 
 ## With the highlighter on: tint the target cell and describe the crop standing on it.

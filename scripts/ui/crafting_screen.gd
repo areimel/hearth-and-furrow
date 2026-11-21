@@ -30,7 +30,6 @@ func open_for(target: Station) -> void:
 	_detach()
 	station = target
 	station.changed.connect(_on_station_changed)
-	station.collected.connect(_on_collected)
 	GameClock.minute_passed.connect(_on_minute)
 	Inventory.changed.connect(_refresh_state)
 	_frame.title = station.display_name()
@@ -150,21 +149,10 @@ func _on_minute(_hour: int, _minute: int) -> void:
 	_show_jobs()
 
 
-func _on_collected(items: Dictionary) -> void:
-	var parts: Array[String] = []
-	var icon: Texture2D = null
-	for id: StringName in items:
-		var item := Content.item(id)
-		parts.append("%d x %s" % [items[id], item.display_name])
-		icon = icon if icon else item.icon
-	Toast.show_message(get_tree(), "Collected " + ", ".join(parts), icon)
-
-
 func _detach() -> void:
 	if station == null:
 		return
 	station.changed.disconnect(_on_station_changed)
-	station.collected.disconnect(_on_collected)
 	GameClock.minute_passed.disconnect(_on_minute)
 	Inventory.changed.disconnect(_refresh_state)
 	station = null

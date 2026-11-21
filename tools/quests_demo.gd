@@ -89,7 +89,7 @@ func _ready_errand() -> void:
 
 func _talk_to(npc_id: StringName) -> void:
 	var villagers := _level.get_node("Villagers") as Villagers
-	villagers.npc(npc_id).call(&"_talk")
+	villagers.npc(npc_id)._talk.talk()
 
 
 func _box() -> DialogueBox:
