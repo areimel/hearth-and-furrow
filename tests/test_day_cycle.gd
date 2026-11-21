@@ -82,3 +82,41 @@ func test_rain_wets_tilled_soil_on_new_morning() -> void:
 	check(not level.farm_grid.is_wet(cell), "dry the next clear day")
 	check(not level.sky.is_raining(), "sky clear")
 	await _despawn()
+
+
+func test_pause_setting_governs_menus_but_not_the_transition() -> void:
+	await _spawn()
+	var settings := GameSettings.instance(tree)
+	var saved_autosave := settings.autosave
+	settings.autosave = false
+	var screen := UIScreen.new()
+	level.add_child(screen)
+	screen.open()
+	settings.set_value(&"pause_in_menus", true)
+	level._process(0.0)
+	check(GameClock.paused, "open screen pauses time by default")
+	settings.set_value(&"pause_in_menus", false)
+	level._process(0.0)
+	check(not GameClock.paused, "setting off: time keeps running behind a screen")
+	level.day_cycle.busy = true
+	level._process(0.0)
+	check(GameClock.paused, "the day transition always pauses")
+	level.day_cycle.busy = false
+	settings.set_value(&"pause_in_menus", true)
+	settings.autosave = saved_autosave
+	screen.close()
+	await _despawn()
+
+
+func test_debug_day_key_is_ignored_while_a_screen_is_open() -> void:
+	await _spawn()
+	var screen := UIScreen.new()
+	level.add_child(screen)
+	screen.open()
+	var key := InputEventAction.new()
+	key.action = &"day_change"
+	key.pressed = true
+	level.day_cycle._unhandled_input(key)
+	check(not level.day_cycle.busy, "no day change behind an open screen")
+	screen.close()
+	await _despawn()

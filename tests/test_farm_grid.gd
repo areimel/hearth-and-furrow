@@ -95,3 +95,30 @@ func test_placeable_registers_and_releases_cell() -> void:
 	await tree.process_frame
 	check(not grid.is_occupied(cell), "remove releases cell")
 	await _despawn()
+
+
+func test_village_ground_is_land_not_water() -> void:
+	await _spawn()
+	var village := level.get_node("Objects/Village") as Village
+	var street := Vector2i(30, -11)  # a walkable village cell over the farm's sea tiles
+	check(village.is_cell_walkable(street), "fixture: the street is walkable village ground")
+	check(not grid.is_water(street), "street is not water")
+	check(not grid.is_tool_valid(G.ToolKind.FISHING_ROD, street), "no fishing on the street")
+	check(not grid.is_tool_valid(G.ToolKind.HOE, street), "no hoeing the street")
+	check(not grid.is_buildable(street), "no building on the street")
+	var wet := 0
+	for cell in grid.ground_layer.get_used_cells():
+		if village.is_cell_walkable(cell) and (grid.is_water(cell) or grid.is_farmable(cell)):
+			wet += 1
+	eq(wet, 0, "no walkable village cell is water or farmable")
+	await _despawn()
+
+
+func test_starter_layout_keeps_the_way_to_the_village_gate_open() -> void:
+	await _spawn()
+	var open := func(cell: Vector2i) -> bool:
+		return grid.is_walkable_land(cell) and not grid.is_occupied(cell) and not grid.is_object_near_cell(cell) \
+				and not grid._in_house(cell)
+	var reach := GridSearch.flood(grid.cell_of(level.player.position), open)
+	check(reach.has(Vector2i(28, -1)) or reach.has(Vector2i(28, 0)), "the gate approach is reachable from the house")
+	await _despawn()
