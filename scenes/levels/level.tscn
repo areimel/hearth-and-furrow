@@ -33,6 +33,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/shop_screen.tscn" id="wired_shopscreen"]
 
 [ext_resource type="PackedScene" path="res://scenes/ui/build_menu.tscn" id="wired_buildmenu"]
+[ext_resource type="PackedScene" path="res://scenes/world/risk_system.tscn" id="wired_risksystem"]
 
 [sub_resource type="Gradient" id="Gradient_rmjfq"]
 offsets = PackedFloat32Array(0, 0.21830986, 0.42488262, 1)
@@ -2868,6 +2869,8 @@ workstations = NodePath("../Workstations")
 [node name="ShopScreen" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_shopscreen")]
 
 [node name="BuildMenu" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_buildmenu")]
+
+[node name="RiskSystem" parent="." instance=ExtResource("wired_risksystem")]
 
 [connection signal="do_action" from="Objects/Player" to="." method="_on_player_do_action"]
 [connection signal="tool_use" from="Objects/Player" to="." method="_on_player_tool_use"]

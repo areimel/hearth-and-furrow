@@ -229,3 +229,18 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   `remove_chosen`); `build` / `ui_cancel` leave build mode. While active `Player.action_override` (a Callable) takes the `action` button; any
   future mode can use the same hook. `Level.show_placement_preview(texture, tint := PREVIEW_TINT)`; `FarmGrid.highlight_cell(cell, valid)`.
   Refunds go through `Loot.give(..., &"refunded")`.
+
+## Weather and crop risks (feat/weather-risks)
+- **Weather** additions: `outlook(days := 3) -> Array[int]` (true kinds, tomorrow first), `outlook_text() -> String`,
+  `is_wet_spell() -> bool` (rain/storm on 3 of the last 4 days, today included; history saved under `past`),
+  signal `storm_warning(day)` (emitted by `begin_day` when tomorrow is a storm, and by `set_forecast(STORM)`).
+  `roll_for_day` never yields a storm before day 3 or on the day after a raw storm roll.
+- **WorldSky**: `base_tint` multiplies the day gradient by the eased seasonal tint (`Balance.SEASON_TINTS`); storms add
+  darkness, lightning and slanted rain; `WorldSky.sway_material` is the shared crop sway shader material.
+- **RiskSystem** (`scenes/world/risk_system.tscn`, add as a child of Level; save key `risks`): `recent_losses() -> int`
+  (crops lost in the last 7 days), `advice() -> String` (reeve hint), `previous_crop(cell) -> StringName`,
+  `is_risk_free() -> bool`. Order independence: the storm acts in `day_ending` on a snapshot of crops ripe at dawn
+  (taken on `weather_changed`), so growth order is irrelevant; blight acts on `day_passed` (morning, after growth):
+  a spotted crop (`Crop.blight_warning`) turns blighted next morning unless hoed. A warned crop also gets one weed so the
+  existing hoe check (`weeds > 0`) accepts it; `Crop.clear_weeds()` cures the warning.
+- **CropField**: signal `crop_reaped(cell, crop_id)` feeds the rotation memory. **Crop**: `blight_warning`.
