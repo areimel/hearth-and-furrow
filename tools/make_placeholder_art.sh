@@ -549,6 +549,96 @@ GENERATED+=(loom.png)
 save workbench $(tile 14 0) $(swap '#e0394c' '#4f8f5a') +antialias \
 	-fill '#141b1b' -draw 'line 5,6 9,4' -fill '#d4dde8' -draw 'point 6,5' -draw 'point 7,5' -draw 'point 8,4'
 
+# ================================================================ 5. GATHERING NODES
+# gather_<kind>.png (full) and gather_<kind>_empty.png (depleted); data/gatherables.gd.
+# Bases are NA TilesetNature crops (CC0) plus drawn details; the rest is drawn.
+TN="$WORK/TilesetNature.png"
+cp "$NA/Backgrounds/Tilesets/TilesetNature.png" "$TN"
+
+# stone: NA grey boulder (288,144); depleted: a few pebbles left behind.
+save gather_stone "$TN" -crop 16x16+288+144 +repage $c16
+sprite gather_stone_empty <<'EOF2'
+k = #141b1b
+S = #8a9a82
+L = #aebaa4
+D = #5f6e5f
+---
+................
+................
+................
+................
+................
+................
+................
+................
+................
+....kkk.........
+...kSLSk....kk..
+...kDSDk...kSDk.
+....kkk.....kkk.
+..kk......kk....
+.kSLk....kLSk...
+.kkkk....kkkk...
+EOF2
+
+# bramble: NA round bush (16,160) with drawn dark-purple berries; depleted = bare bush.
+save gather_bramble "$TN" -crop 16x16+16+160 +repage $c16 +antialias \
+	-fill '#3a1f5c' -draw 'rectangle 4,6 5,7' -draw 'rectangle 9,5 10,6' -draw 'rectangle 7,9 8,10' \
+	-draw 'rectangle 11,9 12,10' -draw 'rectangle 3,10 4,11' \
+	-fill '#8a6ac0' -draw 'point 4,6' -draw 'point 9,5' -draw 'point 7,9' -draw 'point 11,9' -draw 'point 3,10'
+save gather_bramble_empty "$TN" -crop 16x16+16+160 +repage $c16
+
+# hazel coppice (16x32): a stool with long straight rods and leafy tips; depleted = cut stubs.
+convert -size 16x32 xc:none +antialias \
+	-fill '#4a3a2a' -draw 'ellipse 8,29 7,2 0,360' -fill '#6b4a2e' -draw 'ellipse 8,28 5,2 0,360' \
+	-fill '#8a5a35' -draw 'line 6,28 2,8' -draw 'line 7,28 5,4' -draw 'line 8,28 8,2' \
+	-draw 'line 9,28 11,4' -draw 'line 10,28 14,9' \
+	-fill '#b07a4a' -draw 'line 7,27 6,10' -draw 'line 9,27 10,10' \
+	-fill '#5f9a3a' -draw 'ellipse 2,7 2,3 0,360' -draw 'ellipse 5,3 2,3 0,360' -draw 'ellipse 8,2 2,2 0,360' \
+	-draw 'ellipse 11,3 2,3 0,360' -draw 'ellipse 14,8 2,3 0,360' \
+	-fill '#8cc152' -draw 'point 2,6' -draw 'point 5,2' -draw 'point 8,1' -draw 'point 11,2' -draw 'point 14,7' \
+	-fill '#3d6e2c' -draw 'point 3,8' -draw 'point 6,4' -draw 'point 12,4' -draw 'point 13,9' \
+	-strip "PNG32:$OUT/gather_hazel.png"
+GENERATED+=(gather_hazel.png)
+convert -size 16x32 xc:none +antialias \
+	-fill '#4a3a2a' -draw 'ellipse 8,29 7,2 0,360' -fill '#6b4a2e' -draw 'ellipse 8,28 5,2 0,360' \
+	-fill '#8a5a35' -draw 'rectangle 4,22 5,28' -draw 'rectangle 7,20 8,28' -draw 'rectangle 10,23 11,28' \
+	-fill '#e0c088' -draw 'rectangle 4,22 5,22' -draw 'rectangle 7,20 8,20' -draw 'rectangle 10,23 11,23' \
+	-fill '#5f9a3a' -draw 'ellipse 3,26 1,1 0,360' -draw 'ellipse 13,26 1,1 0,360' \
+	-strip "PNG32:$OUT/gather_hazel_empty.png"
+GENERATED+=(gather_hazel_empty.png)
+
+# clay pit: an oval of terracotta earth; depleted = dug-out hollow.
+convert -size 16x16 xc:none +antialias \
+	-fill '#4a2a1a' -draw 'ellipse 8,9 7,5 0,360' -fill '#b8704a' -draw 'ellipse 8,9 6,4 0,360' \
+	-fill '#d89868' -draw 'rectangle 4,7 6,7' -draw 'rectangle 9,6 11,6' -draw 'point 12,9' \
+	-fill '#8c5236' -draw 'ellipse 8,10 3,2 0,360' \
+	-strip "PNG32:$OUT/gather_clay.png"
+GENERATED+=(gather_clay.png)
+convert -size 16x16 xc:none +antialias \
+	-fill '#4a2a1a' -draw 'ellipse 8,9 7,5 0,360' -fill '#8c5236' -draw 'ellipse 8,9 6,4 0,360' \
+	-fill '#4a2a1a' -draw 'ellipse 8,10 4,3 0,360' -fill '#5a3422' -draw 'ellipse 8,10 3,2 0,360' \
+	-fill '#b8704a' -draw 'point 3,8' -draw 'point 13,10' \
+	-strip "PNG32:$OUT/gather_clay_empty.png"
+GENERATED+=(gather_clay_empty.png)
+
+# reed bed: tall blades with brown seed heads; depleted = cut stubs in mud.
+convert -size 16x16 xc:none +antialias \
+	-fill '#6b5a3a' -draw 'ellipse 8,14 7,2 0,360' \
+	-fill '#6a9a45' -draw 'line 3,14 2,5' -draw 'line 6,14 6,2' -draw 'line 9,14 10,3' \
+	-draw 'line 12,14 13,6' -draw 'line 8,14 8,6' \
+	-fill '#8cb85a' -draw 'line 4,14 4,8' -draw 'line 11,14 11,8' \
+	-fill '#8a5a35' -draw 'rectangle 6,1 7,4' -draw 'rectangle 10,2 10,5' -draw 'rectangle 2,4 3,6' \
+	-strip "PNG32:$OUT/gather_reed.png"
+GENERATED+=(gather_reed.png)
+convert -size 16x16 xc:none +antialias \
+	-fill '#6b5a3a' -draw 'ellipse 8,14 7,2 0,360' \
+	-fill '#6a9a45' -draw 'rectangle 3,12 3,13' -draw 'rectangle 6,11 6,13' -draw 'rectangle 9,12 9,13' \
+	-draw 'rectangle 12,12 12,13' \
+	-fill '#d9c98a' -draw 'point 3,12' -draw 'point 6,11' -draw 'point 9,12' -draw 'point 12,12' \
+	-strip "PNG32:$OUT/gather_reed_empty.png"
+GENERATED+=(gather_reed_empty.png)
+
 # ================================================================ review sheet
 if [[ "${1:-}" == "--contact" ]]; then
 	mkdir -p "$(dirname "$CONTACT")"

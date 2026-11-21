@@ -119,6 +119,24 @@ func animal(id: StringName, row: Dictionary) -> AnimalData:
 	return res
 
 
+func gatherable(id: StringName, row: Dictionary) -> GatherableData:
+	var res := GatherableData.new()
+	res.id = id
+	res.display_name = row.get("name", String(id))
+	res.verb = row.get("verb", "Gather")
+	res.yields.assign(row.get("yields", []))
+	res.regrow_days = row.get("regrow", 3)
+	res.tool_kind = row.get("tool", G.ToolKind.NONE)
+	res.blocks_movement = row.get("blocks", true)
+	res.placement = row.get("place", GatherableData.PLACE_ANY_GRASS)
+	res.scatter_count = row.get("count", 0)
+	res.full_path = row.get("full", "")
+	res.empty_path = row.get("empty", "")
+	res.full_texture = texture(res.full_path, id)
+	res.empty_texture = texture(res.empty_path, id)
+	return res
+
+
 func npc(id: StringName, row: Dictionary) -> NPCData:
 	var res := NPCData.new()
 	res.id = id
