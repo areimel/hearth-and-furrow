@@ -27,6 +27,16 @@ buses/default_bus_layout="uid://ci8u0m7y1ts8a"
 
 Enum="*res://scripts/global/enums.gd"
 Data="*res://scripts/global/data.gd"
+Content="*res://scripts/autoload/content.gd"
+SaveManager="*res://scripts/autoload/save_manager.gd"
+Progress="*res://scripts/autoload/progress.gd"
+GameClock="*res://scripts/autoload/game_clock.gd"
+Calendar="*res://scripts/autoload/calendar.gd"
+Weather="*res://scripts/autoload/weather.gd"
+Inventory="*res://scripts/autoload/inventory.gd"
+Economy="*res://scripts/autoload/economy.gd"
+Relationships="*res://scripts/autoload/relationships.gd"
+QuestManager="*res://scripts/autoload/quest_manager.gd"
 
 [display]
 
