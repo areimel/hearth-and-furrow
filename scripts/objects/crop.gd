@@ -149,7 +149,7 @@ func info_text() -> String:
 
 ## Save data: ids and plain values only.
 func to_dict() -> Dictionary:
-	return {"id": crop_id, "cell": [cell.x, cell.y], "age": age, "weeds": weeds,
+	return {"id": crop_id, "cell": GridSearch.cells_to_pairs([cell])[0], "age": age, "weeds": weeds,
 			"blighted": blighted, "flattened": _flattened, "blight_warning": blight_warning}
 
 
@@ -183,8 +183,7 @@ func _draw_spots() -> void:
 func _refresh() -> void:
 	if _sprite == null or data == null:
 		return
-	var t := clampf(float(age) / float(maxi(1, data.days_to_mature)), 0.0, 1.0)
-	_sprite.frame = _frames - 1 if is_ripe() and not _flattened else int(t * (_frames - 1))
+	_sprite.frame = _frames - 1 if is_ripe() and not _flattened else mini(data.frame_for_age(age), _frames - 1)
 	_sprite.modulate = Color(0.75, 0.62, 0.45) if blighted else (FLATTENED_COLOR if _flattened else Color.WHITE)
 	_sprite.rotation = 1.2 if _flattened else 0.0
 	_sprite.material = null if _flattened else WorldSky.sway_material

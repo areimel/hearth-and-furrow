@@ -71,15 +71,7 @@ func _build_astar() -> void:
 
 ## Nearest walkable world cell within 3 cells, or (-1, -1) when none.
 func _snap(cell: Vector2i) -> Vector2i:
-	if is_cell_walkable(cell):
-		return cell
-	for radius in range(1, 4):
-		for dy in range(-radius, radius + 1):
-			for dx in range(-radius, radius + 1):
-				var c := cell + Vector2i(dx, dy)
-				if is_cell_walkable(c):
-					return c
-	return Vector2i(-1, -1)
+	return GridSearch.nearest(cell, 3, is_cell_walkable, Vector2i(-1, -1))
 
 
 ## The farm's shore tiles collide; erase the gate cells so the player can walk through.

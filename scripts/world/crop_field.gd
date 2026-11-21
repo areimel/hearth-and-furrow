@@ -94,8 +94,7 @@ func to_dict() -> Array:
 func from_dict(saved: Array) -> void:
 	clear()
 	for entry: Dictionary in saved:
-		var pair: Array = entry.get("cell", [0, 0])
-		var cell := Vector2i(int(pair[0]), int(pair[1]))
+		var cell: Vector2i = GridSearch.pairs_to_cells([entry.get("cell", [0, 0])])[0]
 		var id := StringName(entry.get("id", ""))
 		if not Content.crops().any(func(row: CropData) -> bool: return row.id == id):
 			continue
