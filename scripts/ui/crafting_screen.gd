@@ -6,7 +6,7 @@ class_name CraftingScreen extends UIScreen
 
 const CRAFTING_GROUP := &"CraftingScreen"
 const LIST_WIDTH := 104
-const FRAME_WIDTH := 300
+const FRAME_WIDTH := 270
 
 var station: Station
 var _focused_recipe: StringName
@@ -108,7 +108,7 @@ func _show_detail() -> void:
 	if _focused_recipe.is_empty():
 		return
 	var recipe := Content.recipe(_focused_recipe)
-	_detail.show_recipe(recipe, station.inputs_missing(recipe), _block_reason(recipe))
+	_detail.show_recipe(recipe, _block_reason(recipe))
 
 
 func _show_jobs() -> void:

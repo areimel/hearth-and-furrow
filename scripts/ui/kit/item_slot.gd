@@ -44,13 +44,17 @@ func _init() -> void:
 	_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_icon)
 	_label = Label.new()
-	_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_label.add_theme_font_size_override("font_size", 8)
 	_label.add_theme_color_override("font_color", UIPalette.PARCHMENT_LIGHT)
-	_label.add_theme_color_override("font_outline_color", UIPalette.WOOD_DARK)
-	_label.add_theme_constant_override("outline_size", 2)
+	var backing := StyleBoxFlat.new()
+	backing.bg_color = Color(UIPalette.WOOD_DARK, 0.8)
+	backing.content_margin_left = 1
+	backing.content_margin_right = 1
+	_label.add_theme_stylebox_override("normal", backing)
+	_label.visible = false
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_label)
 	pressed.connect(func() -> void: activated.emit(self))
@@ -92,6 +96,7 @@ func _refresh_label() -> void:
 	else:
 		_label.add_theme_color_override("font_color", UIPalette.PARCHMENT_LIGHT)
 		_label.text = str(count) if count > 1 else ""
+	_label.visible = not _label.text.is_empty()
 
 
 func _refresh_style() -> void:

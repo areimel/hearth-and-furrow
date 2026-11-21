@@ -244,7 +244,7 @@ func _apply_data() -> void:
 	_name_label.text = _data.display_name
 	_name_label.custom_minimum_size.x = LABEL_WIDTH
 	_name_label.size.x = LABEL_WIDTH
-	_name_label.position = Vector2(8 - LABEL_WIDTH / 2.0, _top() - 16)
+	_name_label.position = Vector2(8 - LABEL_WIDTH / 2.0, 17)
 	_output_icon.position = Vector2(8, _icon_rest_y())
 	_update_visuals()
 

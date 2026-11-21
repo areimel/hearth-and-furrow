@@ -2,6 +2,9 @@ class_name CraftingDetail extends VBoxContainer
 ## Right-hand pane of the crafting screen: one recipe's inputs (have/need), outputs,
 ## duration and chain preview. Pure display; the screen decides what to show.
 
+## Minimum width of wrapping text, so long chain lines wrap instead of widening the pane.
+const WRAP_WIDTH := 120
+
 var _title: Label
 var _needs: HBoxContainer
 var _makes: HBoxContainer
@@ -22,21 +25,23 @@ func _init() -> void:
 	add_child(_time)
 	_chain = Label.new()
 	_chain.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_chain.custom_minimum_size.x = WRAP_WIDTH
 	_chain.add_theme_color_override("font_color", UIPalette.WOOD)
 	_chain.add_theme_font_size_override("font_size", 8)
 	add_child(_chain)
 	_note = Label.new()
 	_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_note.custom_minimum_size.x = WRAP_WIDTH
 	_note.add_theme_color_override("font_color", UIPalette.CRIMSON)
 	add_child(_note)
 
 
-## Show `recipe`; `missing` is the item -> shortfall map from Station.inputs_missing and
-## `note` an optional reason it cannot start (locked, busy).
-func show_recipe(recipe: RecipeData, missing: Dictionary, note: String = "") -> void:
+## Show `recipe`, with inputs counted against the Inventory; `note` is an optional
+## reason it cannot start (locked, busy).
+func show_recipe(recipe: RecipeData, note: String = "") -> void:
 	_title.text = recipe.display_name
-	_fill(_needs, recipe.inputs, missing)
-	_fill(_makes, recipe.outputs, {})
+	_fill(_needs, recipe.inputs)
+	_fill(_makes, recipe.outputs)
 	_time.text = "Time: " + CraftingText.duration(recipe)
 	_chain.text = CraftingText.chain_preview(recipe)
 	_note.text = note
@@ -54,7 +59,7 @@ func _row(caption: String) -> HBoxContainer:
 	return row
 
 
-func _fill(row: HBoxContainer, items: Dictionary, missing: Dictionary) -> void:
+func _fill(row: HBoxContainer, items: Dictionary) -> void:
 	while row.get_child_count() > 1:
 		var old := row.get_child(1)
 		row.remove_child(old)
@@ -66,7 +71,7 @@ func _fill(row: HBoxContainer, items: Dictionary, missing: Dictionary) -> void:
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.set_item(id, need)
 		if row == _needs:
-			var have := need - int(missing.get(id, 0))
+			var have := Inventory.count(id)
 			slot.set_count_text("%d/%d" % [have, need],
 					UIPalette.CRIMSON if have < need else UIPalette.PARCHMENT_LIGHT)
 			slot.dimmed = have < need
