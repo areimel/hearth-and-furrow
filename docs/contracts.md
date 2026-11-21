@@ -304,3 +304,25 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   only the highest tier reached pays, and only if the player came (table, greeting or gift).
 - **FestivalScreen** (`scenes/ui/festival_screen.tscn`, group `FestivalScreen`): opened by
   the feast table; instanced under `Menus` on demand if the HUD has none.
+
+## Actors and interaction (fix/actors-interaction)
+- **Layout**: player, NPC, animal and their helpers live in `scripts/actors/` + `scenes/actors/`
+  (`player.tscn`, `npc.tscn`, `animal.tscn`); `bed.gd` and `house.gd` are in `scripts/objects/`.
+- **Prompts**: every interactable publishes `Interactable.prompt_text` and keeps it current
+  (Station "Open <name>" / "Collect", NPC "Talk", Animal its verb, Gatherable its verb, Tree
+  "Pick apples", Bed "Sleep", feast table). Disable the Interactable instead of showing an empty
+  prompt. Meta `prompt_text` is no longer set by anything.
+- **Talk is the default**: `NPC` always talks. "Give <item>" is a dialogue choice offered while the
+  selected item is giftable and no gift was given today; registered options (Trade, errands) are
+  always reachable. `NPC.dialogue_options()` returns only the registered ones.
+- `Villagers.set_line_override(provider: Callable)`: `provider(npc_id) -> Array[String]`, empty to
+  fall through; checked first by every talk (the feast greeting uses it). `Callable()` clears it.
+- **Places** is the one static map helper (`all has marker position_of route path_between spots`);
+  `NPCNav` is gone. `position_of` returns `Vector2.ZERO` for an unknown place; use `has`/`marker`
+  when absence is normal.
+- **Emote** (`scripts/components/emote.gd`): `pop(emote_number)`; constants `HEART HAPPY FLAT SAD`.
+- **Loot** also has `missing(cost) -> Dictionary`; `give(..., verb)` with an empty verb records no
+  Progress (quest rewards, favours). Stations and gatherables keep leftovers (`Loot.deliver`);
+  animals are all-or-nothing; trees pick as many apples as fit.
+- **Apples** are picked by hand (`AppleTree.pick_apples()`); axe hits no longer drop apples.
+- **Player**: after any UIScreen swallowed an `action` press, `action` is ignored until released.
