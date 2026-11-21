@@ -69,6 +69,24 @@ func test_stump_regrows_after_the_set_days() -> void:
 	_cleanup()
 
 
+func test_apples_are_picked_by_hand_without_hurting_the_tree() -> void:
+	var a := await _tree()
+	a._show_apples(3)
+	var pad: Interactable = a.get_node("Interactable")
+	check(pad.enabled, "pick prompt enabled with fruit")
+	eq(pad.prompt_text, "Pick apples", "prompt")
+	var health := a.health
+	eq(a.pick_apples(), 3, "all picked")
+	eq(Inventory.count(&"apple"), 3, "in the pack")
+	eq(Progress.count(&"gathered.apple"), 3, "recorded")
+	eq(a.health, health, "tree unhurt")
+	check(not pad.enabled, "disabled when bare")
+	a._show_apples(2)
+	a.hit(G.ToolKind.AXE, Vector2.RIGHT, null)
+	eq(a.apple_count(), 2, "the axe no longer knocks apples down")
+	_cleanup()
+
+
 func test_apples_regrow_only_in_summer_and_autumn() -> void:
 	var a := await _tree()
 	GameClock.day_index = Calendar.day_index_for(1, G.Season.WINTER, 5)
