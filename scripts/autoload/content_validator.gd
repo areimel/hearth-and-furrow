@@ -110,38 +110,67 @@ func _check_quests() -> void:
 	var quest_ids: Array[StringName] = []
 	for q: QuestData in _c.quests():
 		quest_ids.append(q.id)
-	var npc_ids: Array[StringName] = []
-	for n: NPCData in _c.npcs():
-		npc_ids.append(n.id)
 	for q: QuestData in _c.quests():
 		var where := "quest %s" % q.id
-		if not q.giver.is_empty() and not q.giver in npc_ids:
+		if not q.giver.is_empty() and not _has_npc(q.giver):
 			_out.append("%s: unknown giver %s" % [where, q.giver])
 		for req: StringName in q.requires:
 			if not req in quest_ids:
 				_out.append("%s: requires unknown quest %s" % [where, req])
 		for cond: QuestCondition in q.conditions:
-			if not cond.kind in QuestCondition.KINDS:
-				_out.append("%s: unknown condition kind %s" % [where, cond.kind])
-			elif cond.kind in [QuestCondition.HAVE_ITEM, QuestCondition.DELIVER_ITEM]:
-				_need_item(cond.target, where)
-			elif cond.kind in [QuestCondition.TALK_TO, QuestCondition.HEARTS]:
-				if not cond.target in npc_ids:
-					_out.append("%s: unknown npc %s" % [where, cond.target])
-		for reward: QuestReward in q.rewards:
-			if not reward.kind in QuestReward.KINDS:
-				_out.append("%s: unknown reward kind %s" % [where, reward.kind])
-			elif reward.kind == QuestReward.ITEM:
-				_need_item(reward.target, where)
-			elif reward.kind == QuestReward.FRIENDSHIP and not reward.target in npc_ids:
-				_out.append("%s: unknown npc %s" % [where, reward.target])
+			_check_condition(cond, where)
+		_check_rewards(q.rewards, where)
+		for crop_id: StringName in q.crops:
+			if not _c.crops().any(func(c: CropData) -> bool: return c.id == crop_id):
+				_out.append("%s: unknown crop %s" % [where, crop_id])
+		if not q.chain.is_empty() and not _c.chains().has(q.chain):
+			_out.append("%s: unknown chain %s" % [where, q.chain])
+		_need_counts(q.perk_gives, where + " perk")
+		_need_counts(q.perk_takes, where + " perk")
+
+
+func _check_condition(cond: QuestCondition, where: String) -> void:
+	if not cond.kind in QuestCondition.KINDS:
+		_out.append("%s: unknown condition kind %s" % [where, cond.kind])
+	elif cond.kind in QuestCondition.ITEM_KINDS:
+		if cond.ids().is_empty():
+			_out.append("%s: item condition without items" % where)
+		for id: StringName in cond.ids():
+			_need_item(id, where)
+	elif cond.kind in [QuestCondition.TALK_TO, QuestCondition.HEARTS]:
+		if not _has_npc(cond.target):
+			_out.append("%s: unknown npc %s" % [where, cond.target])
+	if cond.amount <= 0:
+		_out.append("%s: condition amount must be > 0" % where)
+
+
+func _check_rewards(rewards: Array[QuestReward], where: String) -> void:
+	for reward: QuestReward in rewards:
+		if not reward.kind in QuestReward.KINDS:
+			_out.append("%s: unknown reward kind %s" % [where, reward.kind])
+		elif reward.kind == QuestReward.ITEM:
+			_need_item(reward.target, where)
+		elif reward.kind == QuestReward.FRIENDSHIP and not _has_npc(reward.target):
+			_out.append("%s: unknown npc %s" % [where, reward.target])
 
 
 func _check_festivals() -> void:
 	for f: FestivalData in _c.festivals():
+		var where := "festival %s" % f.id
 		if f.day < 1 or f.day > Balance.DAYS_PER_SEASON or f.season < 0 \
 				or f.season >= Balance.SEASONS_PER_YEAR:
-			_out.append("festival %s: bad date" % f.id)
+			_out.append("%s: bad date" % where)
+		if f.start_hour < Balance.DAY_START_HOUR or f.end_hour <= f.start_hour \
+				or f.end_hour > 24:
+			_out.append("%s: bad hours" % where)
+		for ask: QuestCondition in f.asks:
+			_check_condition(ask, where + " ask")
+		var last := -1
+		for tier: RewardTier in f.tiers:
+			if tier.min_count <= last or tier.min_count > f.total_asked():
+				_out.append("%s: tier thresholds must rise and be reachable" % where)
+			last = tier.min_count
+			_check_rewards(tier.rewards, where + " tier")
 
 
 func _check_tool_tiers() -> void:
@@ -158,6 +187,10 @@ func _check_chains() -> void:
 		for target: StringName in chains[chain]:
 			if not have.has(target):
 				_out.append("chain %s: %s not craftable from raw items" % [chain, target])
+
+
+func _has_npc(id: StringName) -> bool:
+	return _c.npcs().any(func(n: NPCData) -> bool: return n.id == id)
 
 
 func _has_tier(id: StringName) -> bool:

@@ -170,3 +170,29 @@ Never call `advance_day()` from inside a `day_ending`/`day_passed` handler.
 - **Loot.give(tree, item_id, amount, verb) -> int**: Inventory + Progress + toast ("Pack is full" on overflow).
 - **Player**: `input_locked`, `highlighter_on`, `action_item`, signal `interact_focus_changed(Interactable)`.
   An Interactable's prompt text is metadata `prompt_text` on it or its parent (default "Use").
+
+## Quests (additions by the quests branch)
+- **QuestData** new fields: `sequential` (conditions are steps done in order; finished steps
+  latch, item conditions excepted), `auto_start`, `note` (Almanack), `chain`, `crops`
+  (crop ids the errand needs; drives the giver's out-of-season line), `perk_text`,
+  `perk_gives`, `perk_takes` (daily favour once complete), `has_perk()`.
+- **QuestCondition** new kinds: `met` (met >= amount villagers), `days` (days since the
+  quest, or the current step, began), `probe` (a number reported by a registered world
+  probe, e.g. `sown.wheat`, `watered.cabbage`). New field `targets` (COUNTER: summed
+  counters; feast asks: accepted items), helpers `ids()`, `accepts(item)`.
+- **QuestReward** new kind `friendship_all`; new field `text`; `describe() -> String`
+  ("50 coins", "6 Seed Barley", "Friendship: Ned Miller"; flags describe as "" unless `text`).
+- **QuestManager** additions: `current_step(id) -> int`, `condition_required(id, i) -> int`,
+  `start_auto_quests() -> Array[StringName]`, `register_probe(key, callable)`,
+  `unregister_probe(key)`, `perk_available(id)`, `can_claim_perk(id)`, `claim_perk(id) -> bool`,
+  `grant(reward, npc_ids := [])`, signal `step_advanced(quest_id, step)`.
+  Save section `quests` gains `steps`, `step_days`, `start_days`, `perk_days` (old saves load).
+- Journal rendering: for every active/complete quest show `title`, `description` and its
+  conditions with `condition_progress(id, i)` / `condition_required(id, i)`. For a
+  `sequential` quest show only conditions `0..current_step(id)` (earlier ones ticked, the
+  current one live). `note` belongs in the Almanack.
+- Almanack chain notes: `data/almanack.gd` `CHAINS` (chain id -> text).
+- **QuestGiver** (`scenes/world/quest_giver.tscn`, one child of Level): registers giver
+  options via `Villagers.register_option`, starts auto quests on a new game, plays hand-offs,
+  toasts, and registers the field probes. Quest words live in `data/dialogue_quests.gd`.
+- Flags set by quests: `prologue_done`, `miller_fair_measure`, `alewife_barm_share`.
