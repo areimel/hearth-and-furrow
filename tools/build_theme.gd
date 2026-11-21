@@ -46,9 +46,6 @@ func _labels(theme: Theme) -> void:
 	theme.set_constant("line_spacing", "Label", 1)
 	theme.set_type_variation("HeaderLabel", "Label")
 	theme.set_color("font_color", "HeaderLabel", UIPalette.RUST)
-	theme.set_color("font_shadow_color", "HeaderLabel", UIPalette.SHADOW)
-	theme.set_constant("shadow_offset_x", "HeaderLabel", 1)
-	theme.set_constant("shadow_offset_y", "HeaderLabel", 1)
 	# HudLabel: light text with a dark outline, for text drawn over the world.
 	theme.set_type_variation("HudLabel", "Label")
 	theme.set_color("font_color", "HudLabel", UIPalette.PARCHMENT_LIGHT)
