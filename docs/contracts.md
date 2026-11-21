@@ -304,3 +304,11 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   only the highest tier reached pays, and only if the player came (table, greeting or gift).
 - **FestivalScreen** (`scenes/ui/festival_screen.tscn`, group `FestivalScreen`): opened by
   the feast table; instanced under `Menus` on demand if the HUD has none.
+
+## Audio (feat/audio, roadmap 27)
+- Table: `data/audio.gd`. `SFX` maps event names (`pickup`, `coins`, `quest`, `bell`) to `{path, volume_db, pitch_min, pitch_max}`;
+  `MUSIC` maps `G.Season` to a track path, with `MUSIC_FALLBACK`. Placeholder SFX reuse existing files at other pitches.
+- **AudioDirector** (`scripts/autoload/audio_director.gd`): `play(event: StringName)` (unknown events are ignored),
+  `music_for_season(season) -> String`. Listens to Inventory, Economy, QuestManager and GameClock; pickups are rate-limited to 0.1 s.
+- Autoload line to add to `project.godot`: `AudioDirector="*res://scripts/autoload/audio_director.gd"`.
+- Music playback is not wired here; the level still owns its own music stream.
