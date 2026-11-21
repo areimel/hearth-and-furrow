@@ -122,12 +122,7 @@ func can_start(recipe_id: StringName) -> bool:
 
 ## Inputs of `recipe` the Inventory lacks: item id -> shortfall.
 func inputs_missing(recipe: RecipeData) -> Dictionary:
-	var missing: Dictionary = {}
-	for id: StringName in recipe.inputs:
-		var short: int = int(recipe.inputs[id]) - Inventory.count(id)
-		if short > 0:
-			missing[id] = short
-	return missing
+	return Loot.missing(recipe.inputs)
 
 
 # ---------------------------------------------------------------- jobs
@@ -138,8 +133,7 @@ func start_job(recipe_id: StringName) -> bool:
 	if not can_start(recipe_id):
 		return false
 	var recipe := Content.recipe(recipe_id)
-	for id: StringName in recipe.inputs:
-		Inventory.remove(id, int(recipe.inputs[id]))
+	Loot.take(recipe.inputs)
 	if not recipe.overnight and recipe.minutes <= 0:
 		_finish(recipe)
 	else:
@@ -149,22 +143,18 @@ func start_job(recipe_id: StringName) -> bool:
 	return true
 
 
-## Move waiting output into the Inventory and record Progress `crafted`. Anything that
-## does not fit stays in the station. True only if everything was taken.
+## Move waiting output into the Inventory (Loot: records Progress `crafted`, toasts). Anything
+## that does not fit stays in the station. True only if everything was taken.
 func collect() -> bool:
 	if output.is_empty():
 		return false
+	var leftover := Loot.deliver(get_tree(), output, &"crafted")
 	var taken: Dictionary = {}
-	for id: StringName in output.keys():
-		var amount: int = int(output[id])
-		var moved := amount - Inventory.add(id, amount)
+	for id: StringName in output:
+		var moved: int = int(output[id]) - int(leftover.get(id, 0))
 		if moved > 0:
 			taken[id] = moved
-			Progress.record(&"crafted", id, moved)
-		if moved >= amount:
-			output.erase(id)
-		else:
-			output[id] = amount - moved
+	output = leftover
 	_update_visuals()
 	if not taken.is_empty():
 		collected.emit(taken)
@@ -254,6 +244,7 @@ func _update_visuals() -> void:
 		return
 	_sprite.modulate = Color(0.85, 0.85, 1.0) if is_working() else Color.WHITE
 	_output_icon.visible = has_output()
+	_interactable.prompt_text = "Collect" if has_output() else "Open %s" % display_name()
 	if has_output():
 		_output_icon.texture = Content.item(output.keys()[0]).icon
 	queue_redraw()

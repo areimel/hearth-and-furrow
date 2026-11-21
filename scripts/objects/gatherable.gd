@@ -3,8 +3,8 @@ class_name Gatherable extends Placeable
 ## fully described by its GatherableData row (`gatherable_id`). Interacting rolls the
 ## row's in-season yields into the Inventory, records `gathered.<item>` progress and
 ## depletes the node; it regrows `regrow_days` day-ends later. Whatever does not fit
-## in a full pack stays on the node for the next visit. The prompt is published as
-## meta `prompt_text` on the Interactable.
+## in a full pack stays on the node for the next visit. The prompt is published as the
+## Interactable's `prompt_text`.
 
 ## Care state changed (prompt or sprite may be stale).
 signal state_changed
@@ -83,7 +83,8 @@ func roll_yields() -> Dictionary:
 
 
 ## Gather into the pack. True if anything was taken; the node depletes once nothing
-## is left over. Shows a toast explaining why when nothing could be taken.
+## is left over (what does not fit stays, with Loot's "pack is full" toast). Toasts the
+## reason when nothing could be taken.
 func gather() -> bool:
 	if data == null or depleted:
 		return false
@@ -99,10 +100,6 @@ func gather() -> bool:
 	if pending.is_empty():
 		depleted = true
 		regrow_left = data.regrow_days
-	elif taken == 0:
-		_toast("Pack full")
-	else:
-		_toast("Pack full: the rest stays here")
 	_pop()
 	_changed()
 	return taken > 0
@@ -128,7 +125,8 @@ func refresh() -> void:
 	_sprite.position = Vector2(0, SPRITE_ROW - texture.get_height())
 	var text := prompt_text()
 	_interactable.enabled = text != ""
-	_interactable.set_meta(&"prompt_text", text)
+	if text != "":
+		_interactable.prompt_text = text
 	_shape.set_deferred(&"disabled", depleted or not data.blocks_movement)
 
 
@@ -157,21 +155,18 @@ func _rows() -> Array[Dictionary]:
 	return data.yields_for(Calendar.season(), Calendar.day_of_season())
 
 
-## Move `pending` into the pack; returns how many items went in.
+## Move `pending` into the pack (Loot keeps what does not fit); returns how many items went in.
 func _deliver() -> int:
-	var taken := 0
-	for item: StringName in pending.keys():
-		var want := int(pending[item])
-		var got := want - Inventory.add(item, want)
-		if got > 0:
-			taken += got
-			Progress.record(&"gathered", item, got)
-			_toast("+%d %s" % [got, Content.item(item).display_name], Content.item(item).icon)
-		if got == want:
-			pending.erase(item)
-		else:
-			pending[item] = want - got
-	return taken
+	var before := _total(pending)
+	pending = Loot.deliver(get_tree(), pending, &"gathered")
+	return before - _total(pending)
+
+
+func _total(items: Dictionary) -> int:
+	var sum := 0
+	for id: StringName in items:
+		sum += int(items[id])
+	return sum
 
 
 func _on_day_ending(_day: int) -> void:
@@ -188,9 +183,9 @@ func _changed() -> void:
 	state_changed.emit()
 
 
-func _toast(text: String, icon: Texture2D = null) -> void:
+func _toast(text: String) -> void:
 	if is_inside_tree():
-		Toast.show_message(get_tree(), text, icon)
+		Toast.show_message(get_tree(), text)
 
 
 ## Small shake so a gather feels physical.
