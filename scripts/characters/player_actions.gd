@@ -27,6 +27,13 @@ const SOUNDS: Dictionary = {
 }
 
 
+## The ToolTierData of a tool item, or null for anything else.
+static func tier_of(item: ItemData) -> ToolTierData:
+	if item == null or not item.is_tool() or item.tool_tier.is_empty():
+		return null
+	return Content.tool_tier(item.tool_tier)
+
+
 ## The action `item` performs: its G.ToolKind, SOW for a seed, else G.ToolKind.NONE.
 static func for_item(item: ItemData) -> int:
 	if item == null:

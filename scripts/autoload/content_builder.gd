@@ -192,4 +192,6 @@ func tool_tier(id: StringName, row: Dictionary) -> ToolTierData:
 	res.unlock_flag = row.get("unlock", &"")
 	res.area = row.get("area", 1)
 	res.power = row.get("power", 1.0)
+	res.bonus_logs = row.get("bonus_logs", 0)
+	res.fishing_ease = row.get("fishing_ease", 1.0)
 	return res

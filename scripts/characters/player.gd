@@ -28,6 +28,9 @@ var current_state: State = State.DEFAULT
 var animation_direction: Vector2 = Vector2(0, 1)
 ## Whether the green/red target highlight is shown.
 var highlighter_on: bool = false
+## While valid, `action` calls this instead of interacting or swinging a tool (BuildMode
+## sets it for its duration). The one interface other modes use to take over the button.
+var action_override: Callable = Callable()
 ## The item whose action is in flight (a seed to sow, the tool swung); null when idle.
 var action_item: ItemData
 
@@ -79,7 +82,9 @@ func tool_use_emit() -> void:
 
 
 ## Start the fishing minigame (Level calls this when a rod swing lands on water).
-func start_fishing() -> void:
+## `ease_factor` > 1 makes it more forgiving (the rod tier's `fishing_ease`).
+func start_fishing(ease_factor: float = 1.0) -> void:
+	$FishingGame.ease_factor = ease_factor
 	$FishingGame.reveal()
 	$Animation/AnimationTree.set("parameters/FishBlend/blend_amount", 1)
 	current_state = State.FISHING
@@ -96,8 +101,11 @@ func _hotbar_input() -> void:
 
 
 func _default_input() -> void:
-	if Input.is_action_just_pressed("action") and not _interact_with_nearest():
-		_start_action(Inventory.selected_item())
+	if Input.is_action_just_pressed("action"):
+		if action_override.is_valid():
+			action_override.call()
+		elif not _interact_with_nearest():
+			_start_action(Inventory.selected_item())
 	if Input.is_action_just_pressed("highlighter"):
 		highlighter_on = not highlighter_on
 

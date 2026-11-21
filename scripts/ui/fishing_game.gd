@@ -29,6 +29,7 @@ var fish_velocity: float = 16.0             # Current vertical velocity of the f
 var progress: float = 30.0                  # Current catch progress (0-100)
 var catch_speed: float = 0.0                # How fast progress increases when catching
 var lose_speed: float = 0.0                 # How fast progress decreases when missing
+var ease_factor: float = 1.0                # Rod tier forgiveness: scales catch speed up, lose speed down
 
 # Signals
 signal fish_game_finish(is_success: bool)   # Emitted when game ends, true if caught
@@ -139,8 +140,8 @@ func reveal() -> void:
 	
 	# Apply fish properties
 	$FishSprite.texture = load(fish_data["icon_texture"])
-	catch_speed = fish_data["catch_speed"]
-	lose_speed = fish_data["lose_speed"]
+	catch_speed = fish_data["catch_speed"] * ease_factor
+	lose_speed = fish_data["lose_speed"] / ease_factor
 	progress = fish_data["start_progress"]
 	
 	# Reset progress bar

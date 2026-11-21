@@ -78,3 +78,17 @@ const START_LOADOUT: Array = [
 	[&"wheat_seed", 10],
 	[&"cabbage_seed", 5],
 ]
+
+# --- Trees and building ---
+## Logs a felled tree gives before the axe tier's bonus.
+const TREE_LOGS: int = 2
+## Days a stump takes to regrow into a tree.
+const TREE_REGROW_DAYS: int = 6
+## Apples regrow only in these seasons.
+const APPLE_SEASONS: Array[int] = [G.Season.SUMMER, G.Season.AUTUMN]
+## Chance per evening that an apple tree grows a fresh crop of apples (in season).
+const APPLE_REGROW_CHANCE: float = 0.5
+## Stations standing in the yard at the start of a new game; everything else is built.
+const STARTER_STATIONS: Array[StringName] = [&"threshing_floor", &"quern", &"churn", &"workbench"]
+## Share of a station's build cost refunded when it is removed (rounded down per item).
+const BUILD_REFUND_SHARE: float = 0.5

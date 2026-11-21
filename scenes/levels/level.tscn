@@ -23,6 +23,7 @@
 [ext_resource type="PackedScene" path="res://scenes/world/livestock.tscn" id="wired_livestock"]
 [ext_resource type="PackedScene" path="res://scenes/world/workstations.tscn" id="wired_workstations"]
 [ext_resource type="PackedScene" path="res://scenes/world/villagers.tscn" id="wired_villagers"]
+[ext_resource type="Script" path="res://scripts/world/tree_grove.gd" id="tree_grove_script"]
 [ext_resource type="PackedScene" path="res://scenes/ui/crafting_screen.tscn" id="wired_craftingscreen"]
 [ext_resource type="PackedScene" path="res://scenes/ui/dialogue_box.tscn" id="wired_dialoguebox"]
 
@@ -2429,6 +2430,7 @@ position = Vector2(319, -211)
 
 [node name="Trees" type="Node2D" parent="Objects" unique_id=788674937]
 y_sort_enabled = true
+script = ExtResource("tree_grove_script")
 
 [node name="tree" parent="Objects/Trees" unique_id=1522359988 instance=ExtResource("9_7pb6i")]
 position = Vector2(-60, -6)
