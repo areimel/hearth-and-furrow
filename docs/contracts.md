@@ -78,7 +78,7 @@ and lists it in `pending_placeholders()`. Any other missing path is a `validate(
 **Progress** (save key `progress`) — story flags + counters, shared by quests/recipes/tiers.
 - `set_flag(f)`, `clear_flag(f)`, `has_flag(f)` (empty flag → true), `flags()`
 - `add_count(key, n) -> int`, `count(key)`, `record(verb, id, n)` → key `"<verb>.<id>"`;
-  verbs: `crafted harvested gathered caught sold bought gifted`. Systems MUST record these.
+  verbs: `crafted harvested gathered caught sold bought gifted sowed`. Systems MUST record these.
 - signals `flag_set(f)`, `flag_cleared(f)`, `counter_changed(key, value)`
 
 **GameClock** (save key `clock`) — inert until `start()`. Fields `day_index hour minute time_scale running paused`.
@@ -203,8 +203,8 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   Inventory (leftover stays in `pending`), calls `Progress.record(&"gathered", item, n)`, depletes,
   and regrows after `regrow_days` `GameClock.day_ending`s. Prompt is meta `prompt_text` on its Interactable.
 - `Foraging` (`scenes/world/foraging.tscn`): instance as a child of `Level`. Spawns into
-  `level.gatherables()`, scatters (seeded from `Weather.world_seed`, fallback 1530) two frames after
-  ready, registers save key `foraging`. API: `nodes()`, `count_ready(id)`, `node_at(cell)`,
+  `level.gatherables()`, scatters (seeded from `Weather.world_seed`, fallback 1530; only onto land the player can walk to from
+  the spawn) when the Level starts it, registers save key `foraging`. API: `nodes()`, `count_ready(id)`, `node_at(cell)`,
   `place(id, cell)`, `scatter(id, count, rng)`, `scatter_area(marker, rng)`.
 - Extra spawn areas: a `Marker2D` in group `ForageArea` with metadata `gatherable_id`, `count` and
   optional `radius` (pixels, default 48) gets that many nodes on a new game.
@@ -254,10 +254,9 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   `sections`) loads the backup and sets `restored_from_backup`; a newer `save_version` returns `ERR_FILE_UNRECOGNIZED` (no fallback).
 - **Late providers**: `load_game()` keeps sections nobody has registered yet and delivers each inside `register()`. So a scene-owned
   provider must tolerate `from_dict()` being called from its own `_ready()` before it is fully set up (stash it and apply once ready;
-  see `Livestock` and `Workstations`). `new_game()` drops pending sections. Do not rely on `reset()` having run first.
+  see `LevelFeature`). `new_game()` drops pending sections. Do not rely on `reset()` having run first.
 - **GameSession** (autoload): `start_new()`, `continue_game() -> Error`, `save_and_quit()`, `quit_to_title()`, `in_game`. Continue loads
-  *before* the level exists. It enables `SaveManager.autosave_enabled`, adds a `PlayerState` provider (key `player`: highlighter) to the
-  Level, shows a "Saved" toast after the morning fade-in, and hooks any node with signals `save_and_quit_requested` /
+  *before* the level exists. It enables `SaveManager.autosave_enabled`, shows a "Saved" toast after the morning fade-in, and hooks any node with signals `save_and_quit_requested` /
   `quit_requested` (group `GameMenu`) to `save_and_quit()` / `quit_to_title()` (no save).
 - **Boot**: main scene is `scenes/ui/title_screen.tscn`. Scenes that boot straight into the level (tests, `tools/*`) never enable autosave.
 
@@ -356,3 +355,22 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   animals are all-or-nothing; trees pick as many apples as fit.
 - **Apples** are picked by hand (`AppleTree.pick_apples()`); axe hits no longer drop apples.
 - **Player**: after any UIScreen swallowed an `action` press, `action` is ignored until released.
+## World roots: LevelFeature, GridSearch, village ground
+- **LevelFeature** (`scripts/world/level_feature.gd`, `extends Node`): base of every feature root under `Level`
+  (`FarmGrid`, `Livestock`, `Workstations`, `Foraging`, `RiskSystem`, `PlayerState`). Set `save_key` in the scene.
+  It finds `level`, registers/unregisters the save section, and holds a section that arrives before `start()`.
+  `Level._ready()` calls `start()` on its LevelFeature children **in tree order** (so list a feature after those whose
+  ground it relies on: FarmGrid, Livestock, Workstations, then Foraging; PlayerState last). Override the hooks
+  `_on_level_ready()`, `_restore(data)`, `_clear()`, `_new_game_setup()` and `to_dict()`; do not override `from_dict()`/`reset()`.
+  `TreeGrove` is a `Node2D` (y-sorted `Objects/Trees`) so it keeps its own register code.
+- **GridSearch** (`scripts/world/grid_search.gd`, static): `chebyshev(a, b)`, `ring(center, r)`,
+  `nearest(center, max_r, pred, fallback = center)`, `nearest_block(anchor, size, max_r, pred)`,
+  `flood(start, passable) -> Dictionary` (set of cells), `shuffle(arr, rng)` (seeded), `cells_to_pairs/pairs_to_cells`
+  (the saved `[x, y]` encoding, unchanged).
+- **Village ground**: `FarmGrid.in_village(cell)` is true on the village's walkable cells; there `is_water`/`is_farmable`/
+  `is_buildable`/`is_free_for_placement` are false (no fishing, hoeing or building on the street).
+  `FarmGrid.is_walkable_land(cell)` = ground without water or collision, outside the village.
+- **Progress verb `sowed`**: `Level` records `Progress.record(&"sowed", crop_id, 1)` for every seed sown by a player.
+- **PlayerState** (`player`): `{highlighter_on, pos: [x, y], facing: [x, y]}`; a continue restores position and facing, a
+  new game keeps the scene's spawn.
+- Time pauses behind open screens only while the `pause_in_menus` setting is on; the day transition always pauses it.

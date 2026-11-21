@@ -136,3 +136,15 @@ func test_iron_rod_makes_the_minigame_more_forgiving() -> void:
 	check(eased > base, "iron catches faster")
 	check(game.lose_speed < game.FISH_KINDS[game.fish_kind]["lose_speed"], "iron loses slower")
 	await _despawn()
+
+
+func test_sowing_records_progress() -> void:
+	await _spawn()
+	grid.till(_first())
+	Inventory.add(&"wheat_seed", 1)
+	level.player.action_item = Content.item(&"wheat_seed")
+	var before := Progress.count(&"sowed.wheat")
+	level._sow(_first())
+	eq(Progress.count(&"sowed.wheat"), before + 1, "sowed.wheat counter")
+	check(grid.crop_field.crop_at(_first()) != null, "crop planted")
+	await _despawn()

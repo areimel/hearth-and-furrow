@@ -10,8 +10,8 @@ extends Node
 
 const TITLE_SCENE := "res://scenes/ui/title_screen.tscn"
 const LEVEL_SCENE := "res://scenes/levels/level.tscn"
-## Frames to let the level finish its deferred setup (livestock, stations) before wiring.
-const SETTLE_FRAMES := 3
+## Frames to let the scene change finish before wiring the level.
+const SETTLE_FRAMES := 2
 
 ## True between entering the level and returning to the title.
 var in_game: bool = false
@@ -73,10 +73,6 @@ func _enter_level() -> void:
 	var level := get_tree().get_first_node_in_group(&"Level") as Level
 	if level == null:
 		return
-	if level.get_node_or_null("PlayerState") == null:
-		var state := PlayerState.new()
-		state.name = "PlayerState"
-		level.add_child(state)
 	level.day_cycle.transition_finished.connect(_on_morning)
 	for node in get_tree().get_nodes_in_group(&"GameMenu"):
 		_hook_menu(node)

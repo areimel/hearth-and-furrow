@@ -36,7 +36,7 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Debug shortcut for testing; the real way to end a day is the bed.
-	if OS.is_debug_build() and event.is_action_pressed(&"day_change"):
+	if OS.is_debug_build() and event.is_action_pressed(&"day_change") and not UIScreen.any_open(get_tree()):
 		end_day()
 
 

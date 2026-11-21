@@ -4,3 +4,4 @@
 
 [node name="RiskSystem" type="Node"]
 script = ExtResource("1_risk")
+save_key = &"risks"

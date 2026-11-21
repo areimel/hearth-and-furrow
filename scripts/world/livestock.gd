@@ -1,10 +1,9 @@
-class_name Livestock extends Node2D
+class_name Livestock extends LevelFeature
 ## Feature root for farm animals. Add scenes/world/livestock.tscn as a child of Level: it
 ## spawns the animals into `level.animals()`, creates a starter herd on a new game around
-## a free pen near `pen_anchor`, and registers with SaveManager under `livestock`.
+## a free pen near `pen_anchor`, and saves under `livestock`.
 
 const ANIMAL_SCENE := preload("res://scenes/actors/animal.tscn")
-const SAVE_KEY := &"livestock"
 ## Starter herd: species id -> count.
 const STARTER_HERD: Dictionary = {&"cow": 1, &"sheep": 1, &"chicken": 2}
 ## Free cells a pen needs (width x height) and the grazing radius (pixels) inside it.
@@ -13,26 +12,12 @@ const PEN_RADIUS := 30.0
 const SEARCH_RADIUS := 14
 
 ## Preferred top-left cell of the pen; the nearest free ground is used if it is blocked.
-@export var pen_anchor: Vector2i = Vector2i(28, -6)
+@export var pen_anchor: Vector2i = Vector2i(23, 4)
 ## Most animals of one species the farm can hold.
 @export var max_per_species: int = 4
 
-var _level: Level
 var _home: Vector2 = Vector2.ZERO
 var _animals: Array[Animal] = []
-var _ready_done: bool = false
-var _pending: Dictionary = {}
-var _has_pending: bool = false
-
-
-func _ready() -> void:
-	_level = get_parent() as Level
-	SaveManager.register(SAVE_KEY, self)
-	_start.call_deferred()  # the Level's own @onready members are not set until after us
-
-
-func _exit_tree() -> void:
-	SaveManager.unregister(SAVE_KEY)
 
 
 ## Every animal currently on the farm.
@@ -72,16 +57,11 @@ func to_dict() -> Dictionary:
 	return {"animals": list}
 
 
-## Replace the herd with the saved one; an empty dict keeps the starter herd.
-func from_dict(data: Dictionary) -> void:
-	if not _ready_done:
-		_pending = data
-		_has_pending = true
-		return
-	_clear()
+## Restore the saved herd; an empty dict keeps the starter herd.
+func _restore(data: Dictionary) -> void:
 	var list: Array = data.get("animals", [])
 	if list.is_empty() and data.is_empty():
-		_spawn_starter_herd()
+		_new_game_setup()
 		return
 	for entry: Dictionary in list:
 		var id := StringName(entry.get("id", &""))
@@ -89,29 +69,12 @@ func from_dict(data: Dictionary) -> void:
 			_spawn(id, entry.get("pos", _home), entry)
 
 
-## New game: starter herd of 1 cow, 1 sheep and 2 chickens.
-func reset() -> void:
-	_has_pending = false
-	_clear()
-	_spawn_starter_herd()
-
-
-# ---------------------------------------------------------------- internals
-
-func _start() -> void:
-	if _level == null:
-		return
+func _on_level_ready() -> void:
 	_home = _find_pen_center()
-	_ready_done = true
-	if _has_pending:
-		from_dict(_pending)
-	elif _animals.is_empty():
-		_spawn_starter_herd()
 
 
-func _spawn_starter_herd() -> void:
-	if not _ready_done:
-		return
+## New game: starter herd of 1 cow, 1 sheep and 2 chickens.
+func _new_game_setup() -> void:
 	for id: StringName in STARTER_HERD:
 		for i in int(STARTER_HERD[id]):
 			_spawn(id, _random_pen_point())
@@ -122,7 +85,7 @@ func _spawn(animal_id: StringName, at: Vector2, state: Dictionary = {}) -> Anima
 	animal.home_radius = PEN_RADIUS
 	animal.setup(animal_id, _home)
 	animal.position = at
-	_level.animals().add_child(animal)
+	level.animals().add_child(animal)
 	if not state.is_empty():
 		animal.from_dict(state)
 	_animals.append(animal)
@@ -139,31 +102,8 @@ func _random_pen_point() -> Vector2:
 	return _home + Vector2.from_angle(randf() * TAU) * randf() * PEN_RADIUS * 0.8
 
 
-## Nearest block of PEN_CELLS free ground cells to `pen_anchor` (rings outward).
+## Centre (pixels) of the nearest block of PEN_CELLS free ground cells to `pen_anchor`.
 func _find_pen_center() -> Vector2:
-	var grid := _level.get_node("FarmGrid") as FarmGrid
-	var best := pen_anchor
-	for ring in SEARCH_RADIUS + 1:
-		var found := false
-		for dx in range(-ring, ring + 1):
-			for dy in range(-ring, ring + 1):
-				if maxi(absi(dx), absi(dy)) != ring:
-					continue
-				if _block_free(grid, pen_anchor + Vector2i(dx, dy)):
-					best = pen_anchor + Vector2i(dx, dy)
-					found = true
-					break
-			if found:
-				break
-		if found:
-			break
-	var size := Vector2(PEN_CELLS * Balance.TILE_SIZE)
-	return Vector2(best * Balance.TILE_SIZE) + size / 2.0
-
-
-func _block_free(grid: FarmGrid, origin: Vector2i) -> bool:
-	for x in PEN_CELLS.x:
-		for y in PEN_CELLS.y:
-			if not grid.is_free_for_placement(origin + Vector2i(x, y)):
-				return false
-	return true
+	var best := GridSearch.nearest_block(pen_anchor, PEN_CELLS, SEARCH_RADIUS,
+			level.farm_grid.is_free_for_placement)
+	return Vector2(best * Balance.TILE_SIZE) + Vector2(PEN_CELLS * Balance.TILE_SIZE) / 2.0

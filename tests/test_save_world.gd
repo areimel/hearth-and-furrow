@@ -154,8 +154,6 @@ func test_late_registering_provider_receives_its_section() -> void:
 
 func test_player_state_saves_the_highlighter() -> void:
 	await _spawn()
-	var state := PlayerState.new()
-	level.add_child(state)
 	level.player.highlighter_on = true
 	SaveManager.save_game()
 	level.player.highlighter_on = false
@@ -163,5 +161,24 @@ func test_player_state_saves_the_highlighter() -> void:
 	check(level.player.highlighter_on, "highlighter restored")
 	SaveManager.new_game()
 	check(not level.player.highlighter_on, "reset clears it")
+	await _despawn()
+	_cleanup()
+
+
+func test_continue_restores_player_position_and_facing() -> void:
+	await _spawn()
+	var spawn := level.player.position
+	level.player.position = spawn + Vector2(0, 24)
+	level.player.animation_direction = Vector2.LEFT
+	eq(SaveManager.save_game(), OK, "save")
+	await _despawn()
+	eq(SaveManager.load_game(), OK, "load")
+	await _spawn()
+	eq(level.player.position, spawn + Vector2(0, 24), "position restored")
+	eq(level.player.animation_direction, Vector2.LEFT, "facing restored")
+	await _despawn()
+	SaveManager.new_game()
+	await _spawn()
+	eq(level.player.position, spawn, "a new game keeps the spawn point")
 	await _despawn()
 	_cleanup()

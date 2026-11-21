@@ -150,6 +150,8 @@ func test_scatter_obeys_placement_rules_and_is_deterministic() -> void:
 				"%s scattered" % row.id)
 	eq(forage.nodes().size(), expected, "every row placed its count")
 	eq(level.gatherables().get_child_count(), expected, "spawned into level.gatherables()")
+	var reachable := GridSearch.flood(grid.cell_of(level.player.position), grid.is_walkable_land)
+	check(reachable.size() > 100, "the farm has a walkable land mass")
 	var cells: Dictionary = {}
 	for node in forage.nodes():
 		var cell := node.coord
@@ -159,10 +161,12 @@ func test_scatter_obeys_placement_rules_and_is_deterministic() -> void:
 		check(not grid._in_house(cell), "not inside the house")
 		check(grid.occupant(cell) == node, "%s registered occupancy" % node.gatherable_id)
 		check(not grid.is_tilled(cell), "not on tilled soil")
+		check(reachable.has(cell), "%s at %s is reachable on foot" % [node.gatherable_id, cell])
 		if Content.gatherable(node.gatherable_id).placement == GatherableData.PLACE_NEAR_WATER:
-			var wet := [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT].any(
-					func(step: Vector2i) -> bool: return grid.is_water(cell + step))
-			check(wet, "%s sits beside water" % node.gatherable_id)
+			var wet := false
+			for r in range(1, Foraging.WATER_REACH + 1):
+				wet = wet or GridSearch.ring(cell, r).any(grid.is_water)
+			check(wet, "%s sits near water" % node.gatherable_id)
 		for other in forage.nodes():
 			if other != node:
 				var gap := maxi(absi(other.coord.x - cell.x), absi(other.coord.y - cell.y))

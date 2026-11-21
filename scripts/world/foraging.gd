@@ -1,41 +1,28 @@
-class_name Foraging extends Node2D
+class_name Foraging extends LevelFeature
 ## Feature root for gathering nodes. Add scenes/world/foraging.tscn as a child of Level:
 ## it spawns Gatherables into `level.gatherables()`, scatters them on a new game
-## (seeded, so a world looks the same on every machine) and registers with SaveManager
-## under `foraging`. Extra spawn areas: any Marker2D in group `ForageArea` with metadata
-## `gatherable_id` and `count` (and optional `radius` in pixels, default 48) gets that many
-## nodes scattered around it on a new game.
+## (seeded, so a world looks the same on every machine, and only onto ground the player can
+## walk to) and saves under `foraging`. Extra spawn areas: any Marker2D in group
+## `ForageArea` with metadata `gatherable_id` and `count` (and optional `radius` in pixels,
+## default 48) gets that many nodes scattered around it on a new game.
 
-const SAVE_KEY := &"foraging"
 const AREA_GROUP := &"ForageArea"
 ## Used when Weather.world_seed is still 0.
 const FALLBACK_SEED := 1530
 
-var _wait_frames: int = 0
 ## Closest two nodes may sit (cells, Chebyshev).
 const MIN_SPACING := 3
 ## Cells kept clear around the house and around the animal pen centre.
 const HOUSE_CLEARANCE := 2
 const PEN_CLEARANCE := 5
 const DEFAULT_AREA_RADIUS := 48.0
+## How far (cells) from open water a PLACE_NEAR_WATER node may sit.
+const WATER_REACH := 2
 
-var _level: Level
 var _grid: FarmGrid
 var _nodes: Array[Gatherable] = []
-var _started: bool = false
-var _pending: Dictionary = {}
-var _has_pending: bool = false
-
-
-func _ready() -> void:
-	_level = get_parent() as Level
-	SaveManager.register(SAVE_KEY, self)
-	_start.call_deferred()
-
-
-func _exit_tree() -> void:
-	if SaveManager.is_registered(SAVE_KEY):
-		SaveManager.unregister(SAVE_KEY)
+var _known_ids: Dictionary = {}  # gatherable id -> true, built on first use
+var _reachable: Dictionary = {}  # Vector2i -> true: land cells connected to the player's spawn
 
 
 # ---------------------------------------------------------------- API
@@ -61,15 +48,15 @@ func node_at(cell: Vector2i) -> Gatherable:
 
 ## Place one node of kind `id` on `cell` (no validity check). Null before the level exists.
 func place(id: StringName, cell: Vector2i) -> Gatherable:
-	if _level == null or not _known(id):
+	if level == null or not _known(id):
 		return null
 	var node := Gatherable.create(id)
-	node.setup(cell, _level, _level.gatherables())
+	node.setup(cell, level, level.gatherables())
 	_nodes.append(node)
 	return node
 
 
-## Scatter `count` nodes of kind `id` over the whole map using `rng`. Returns how many fit.
+## Scatter `count` nodes of kind `id` over the reachable ground using `rng`. Returns how many fit.
 func scatter(id: StringName, count: int, rng: RandomNumberGenerator) -> int:
 	return _scatter(id, count, rng, _all_cells(), false)
 
@@ -97,69 +84,38 @@ func to_dict() -> Dictionary:
 	return {"nodes": list}
 
 
-## Replace the nodes with the saved ones; an empty dict scatters a fresh world.
-func from_dict(data: Dictionary) -> void:
-	if not _started:
-		_pending = data
-		_has_pending = true
-		return
-	_clear()
+## Place the saved nodes; an empty dict scatters a fresh world.
+func _restore(data: Dictionary) -> void:
 	if data.is_empty():
-		_scatter_world()
+		_new_game_setup()
 		return
 	for entry: Dictionary in data.get("nodes", []):
-		var id := StringName(entry.get("id", &""))
-		var node := place(id, entry.get("cell", Vector2i.ZERO))
+		var node := place(StringName(entry.get("id", &"")), entry.get("cell", Vector2i.ZERO))
 		if node != null:
 			node.from_dict(entry)
 
 
-## New game: remove everything and scatter a fresh world.
-func reset() -> void:
-	_clear()
-	_scatter_world()
-
-
 # ---------------------------------------------------------------- scattering
 
-func _start() -> void:
-	if _level == null:
-		return
-	# Livestock and Workstations claim their ground one frame after the Level is ready,
-	# so wait two frames. Counted in _process: an `await` would resume on a freed node.
-	_wait_frames = 2
-	set_process(true)
+func _on_level_ready() -> void:
+	_grid = level.farm_grid
+	_reachable = GridSearch.flood(_grid.cell_of(level.player.position), _grid.is_walkable_land)
 
 
-func _process(_delta: float) -> void:
-	if _started or _level == null:
-		set_process(false)
-		return
-	_wait_frames -= 1
-	if _wait_frames > 0:
-		return
-	set_process(false)
-	_grid = _level.farm_grid
-	_started = true
-	if _has_pending:
-		from_dict(_pending)
-	elif _nodes.is_empty():
-		_scatter_world()
-
-
-func _scatter_world() -> void:
-	if not _started:
-		return
+## New game: scatter every gatherable row, then the ForageArea markers.
+func _new_game_setup() -> void:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = hash([Weather.world_seed if Weather.world_seed != 0 else FALLBACK_SEED, SAVE_KEY])
+	rng.seed = hash([Weather.world_seed if Weather.world_seed != 0 else FALLBACK_SEED, save_key])
 	for row in Content.gatherables():
 		_scatter(row.id, row.scatter_count, rng, _all_cells(), false)
 	for marker: Node2D in get_tree().get_nodes_in_group(AREA_GROUP):
 		scatter_area(marker, rng)
 
 
+## Reachable ground cells in a fixed (row-major) order so a seed gives the same world.
 func _all_cells() -> Array[Vector2i]:
-	var cells := _grid.ground_layer.get_used_cells()
+	var cells: Array[Vector2i] = []
+	cells.assign(_reachable.keys())
 	cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y or (a.y == b.y and a.x < b.x))
 	return cells
 
@@ -170,11 +126,7 @@ func _scatter(id: StringName, count: int, rng: RandomNumberGenerator, cells: Arr
 		return 0
 	var row := Content.gatherable(id)
 	var order := cells.duplicate()
-	for i in range(order.size() - 1, 0, -1):  # seeded Fisher-Yates
-		var j := rng.randi_range(0, i)
-		var swap: Vector2i = order[i]
-		order[i] = order[j]
-		order[j] = swap
+	GridSearch.shuffle(order, rng)
 	var placed := 0
 	# First pass keeps to non-farmable ground; the second accepts farmable cells too.
 	for strict in ([false] if relaxed else [true, false]):
@@ -208,17 +160,20 @@ func _clear_above(cell: Vector2i, row: GatherableData) -> bool:
 	return true
 
 
+## Open water within WATER_REACH cells. Shore tiles (which block walking) ring the water,
+## so the nearest reachable land is usually two cells from it.
 func _beside_water(cell: Vector2i) -> bool:
-	for step: Vector2i in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
-		if _grid.is_water(cell + step):
-			return true
+	for r in range(1, WATER_REACH + 1):
+		for c in GridSearch.ring(cell, r):
+			if _grid.is_water(c):
+				return true
 	return false
 
 
 ## No other node within MIN_SPACING and nothing (station, crop) on the eight neighbours.
 func _clear_of_neighbours(cell: Vector2i) -> bool:
 	for node in _nodes:
-		if is_instance_valid(node) and maxi(absi(node.coord.x - cell.x), absi(node.coord.y - cell.y)) < MIN_SPACING:
+		if is_instance_valid(node) and GridSearch.chebyshev(node.coord, cell) < MIN_SPACING:
 			return false
 	for dx in range(-1, 2):
 		for dy in range(-1, 2):
@@ -239,16 +194,19 @@ func _near_house(cell: Vector2i) -> bool:
 
 ## True within PEN_CLEARANCE cells of a sibling feature's `pen_center()` (the animal pen).
 func _near_pen(cell: Vector2i) -> bool:
-	for sibling in _level.get_children():
+	for sibling in level.get_children():
 		if sibling.has_method(&"pen_center"):
 			var pen := _grid.cell_of(sibling.pen_center())
-			if maxi(absi(pen.x - cell.x), absi(pen.y - cell.y)) <= PEN_CLEARANCE:
+			if GridSearch.chebyshev(pen, cell) <= PEN_CLEARANCE:
 				return true
 	return false
 
 
 func _known(id: StringName) -> bool:
-	return Content.Gatherables.ROWS.has(id)
+	if _known_ids.is_empty():
+		for row in Content.gatherables():
+			_known_ids[row.id] = true
+	return _known_ids.has(id)
 
 
 func _clear() -> void:
