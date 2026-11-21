@@ -42,7 +42,7 @@ Rules for contributors (human or agent):
 - [x] 24. Pause menu tabs
 - [x] 25. Crafting and shop screens
 - [x] 26. Save/load, autosave, title menu
-- [ ] 27. Audio
+- [x] 27. Audio
 
 ## Wave 4 — hardening
 - [x] 28. Full-year headless simulation
