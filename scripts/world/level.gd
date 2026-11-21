@@ -12,6 +12,7 @@ const PREVIEW_TINT := Color(1, 1, 1, 0.59)
 @onready var player: Player = $Objects/Player
 @onready var day_cycle: DayCycle = $DayCycle
 @onready var sky: WorldSky = $Sky
+@onready var build_mode: BuildMode = $BuildMode
 @onready var _preview: Sprite2D = $Overlay/PreviewMachineSprite2D
 @onready var _prompt: Prompt = $Overlay/CanvasLayer/HUD/Prompt
 @onready var _target_info: Label = $Overlay/CanvasLayer/HUD/TargetInfo
@@ -63,9 +64,9 @@ func gatherables() -> Node2D:
 	return $Objects/Gatherables
 
 
-## True while the player is in build mode (always false until BuildMode exists).
+## True while the player is in build mode (placing or removing structures).
 func is_building() -> bool:
-	return false
+	return build_mode != null and build_mode.active()
 
 
 ## The grid cell in front of the player.

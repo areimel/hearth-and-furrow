@@ -1,6 +1,8 @@
 extends TestCase
 ## Workstations on a real level: starter yard, build cost, removal and the save section.
 
+const Balance := preload("res://data/balance.gd")
+
 var level: Level
 var works: Workstations
 
@@ -23,9 +25,9 @@ func _despawn() -> void:
 	await tree.process_frame
 
 
-func test_starter_yard_places_every_station_on_dry_untilled_ground() -> void:
+func test_starter_yard_places_the_starter_stations_on_dry_untilled_ground() -> void:
 	await _spawn()
-	eq(works.stations().size(), Content.stations().size(), "one of each station")
+	eq(works.stations().size(), Balance.STARTER_STATIONS.size(), "one of each starter station")
 	var seen: Dictionary = {}
 	for station in works.stations():
 		seen[station.station_id] = true
@@ -33,7 +35,7 @@ func test_starter_yard_places_every_station_on_dry_untilled_ground() -> void:
 		check(not level.farm_grid.is_tilled(station.coord), "%s on soil" % station.station_id)
 		check(level.farm_grid.occupant(station.coord) == station, "%s claims its cell" % station.station_id)
 		eq(station.get_parent(), level.stations(), "spawned into level.stations()")
-	eq(seen.size(), Content.stations().size(), "all ids distinct")
+	eq(seen.size(), Balance.STARTER_STATIONS.size(), "all ids distinct")
 	await _despawn()
 
 
@@ -69,11 +71,11 @@ func test_save_round_trip_restores_cells_and_jobs() -> void:
 	var cell := quern.coord
 	var saved := works.to_dict()
 	works.from_dict(saved)
-	eq(works.stations().size(), Content.stations().size(), "same count")
+	eq(works.stations().size(), Balance.STARTER_STATIONS.size(), "same count")
 	var again := works.station_at(cell)
 	check(again != null and again.station_id == &"quern", "quern restored on its cell")
 	check(again.is_working(), "job restored")
 	works.reset()
-	eq(works.stations().size(), Content.stations().size(), "reset lays out a fresh yard")
+	eq(works.stations().size(), Balance.STARTER_STATIONS.size(), "reset lays out a fresh yard")
 	check(not works.station_at(cell).is_working(), "fresh yard is idle")
 	await _despawn()

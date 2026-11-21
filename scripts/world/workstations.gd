@@ -1,13 +1,15 @@
 class_name Workstations extends Node
 ## Feature root for crafting stations. Add scenes/world/workstations.tscn as a child of
-## Level: it spawns Stations into level.stations(), lays out a starter yard on a new
-## game, saves them under `stations`, and opens the crafting screen on interaction.
+## Level: it spawns Stations into level.stations(), lays out a starter yard of
+## Balance.STARTER_STATIONS on a new game (the rest are built, see BuildMode), saves them
+## under `stations`, and opens the crafting screen on interaction.
 
 ## Group of the crafting screen (found, or created under the first CanvasLayer).
 const SCREEN_GROUP := &"CraftingScreen"
 const SCREEN_SCENE := preload("res://scenes/ui/crafting_screen.tscn")
+const Balance := preload("res://data/balance.gd")
 ## Stations per row of the starter yard and the cell gap between stations.
-const YARD_COLUMNS := 4
+const YARD_COLUMNS := 2
 const YARD_SPACING := 2
 
 ## The starter yard is laid out as close to this cell as free ground allows.
@@ -82,16 +84,36 @@ func can_afford_build(station_id: StringName) -> bool:
 
 
 ## Pay the build cost and place the station; null if unaffordable or the cell is
-## not free for placement.
+## not buildable (water, house, tilled, planted or otherwise occupied).
 func build(station_id: StringName, cell: Vector2i) -> Station:
 	if _level == null or not can_afford_build(station_id):
 		return null
-	if not _level.farm_grid.is_free_for_placement(cell):
+	if not _level.farm_grid.is_buildable(cell):
 		return null
 	var row := Content.station(station_id)
 	for id: StringName in row.build_cost:
 		Inventory.remove(id, int(row.build_cost[id]))
 	return place(station_id, cell)
+
+
+## True if the station on `cell` can be removed: it exists, runs no job and holds no output.
+func can_remove(cell: Vector2i) -> bool:
+	var station := station_at(cell)
+	return station != null and not station.is_working() and not station.has_output()
+
+
+## What removing a `station_id` station refunds: Balance.BUILD_REFUND_SHARE of each
+## cost item, rounded down; items that round to zero are left out.
+func refund_of(station_id: StringName) -> Dictionary:
+	var refund: Dictionary = {}
+	var row := Content.station(station_id)
+	if row == null:
+		return refund
+	for id: StringName in row.build_cost:
+		var amount := floori(int(row.build_cost[id]) * Balance.BUILD_REFUND_SHARE)
+		if amount > 0:
+			refund[id] = amount
+	return refund
 
 
 # ---------------------------------------------------------------- save
@@ -148,14 +170,14 @@ func _forget(station: Station) -> void:
 
 
 func _place_starter_yard() -> void:
-	var rows := ceili(float(Content.stations().size()) / YARD_COLUMNS)
+	var rows := ceili(float(Balance.STARTER_STATIONS.size()) / YARD_COLUMNS)
 	var origin := _find_origin(rows)
 	var i := 0
-	for row in Content.stations():
+	for id in Balance.STARTER_STATIONS:
 		var cell := origin + Vector2i(i % YARD_COLUMNS, i / YARD_COLUMNS) * YARD_SPACING
 		if not _usable(cell):
 			cell = _nearest_free(cell)
-		place(row.id, cell)
+		place(id, cell)
 		i += 1
 
 
@@ -169,7 +191,7 @@ func _find_origin(rows: int) -> Vector2i:
 
 
 func _block_usable(origin: Vector2i, rows: int) -> bool:
-	for i in Content.stations().size():
+	for i in Balance.STARTER_STATIONS.size():
 		if not _usable(origin + Vector2i(i % YARD_COLUMNS, i / YARD_COLUMNS) * YARD_SPACING):
 			return false
 	# Keep walkways: the whole block footprint must be dry and untilled too.
@@ -191,7 +213,7 @@ func _nearest_free(from: Vector2i) -> Vector2i:
 
 func _usable(cell: Vector2i) -> bool:
 	var grid := _level.farm_grid
-	return grid.is_free_for_placement(cell) and not grid.is_tilled(cell)
+	return grid.is_buildable(cell)
 
 
 ## Cells at Chebyshev distance `radius` from `center`, nearest-to-axis order not needed.
