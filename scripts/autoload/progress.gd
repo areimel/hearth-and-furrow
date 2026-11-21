@@ -5,7 +5,6 @@ extends Node
 ## Verbs in use: crafted, harvested, gathered, caught, sold, bought, gifted.
 
 signal flag_set(flag: StringName)
-signal flag_cleared(flag: StringName)
 signal counter_changed(key: StringName, value: int)
 
 var _flags: Dictionary[StringName, bool] = {}
@@ -21,11 +20,6 @@ func set_flag(flag: StringName) -> void:
 		return
 	_flags[flag] = true
 	flag_set.emit(flag)
-
-
-func clear_flag(flag: StringName) -> void:
-	if _flags.erase(flag):
-		flag_cleared.emit(flag)
 
 
 ## True for an empty flag, so `has_flag(recipe.unlock_flag)` works for unlocked recipes.

@@ -53,11 +53,6 @@ func initial_focus() -> Control:
 	return _focus_order[0] if not _focus_order.is_empty() else null
 
 
-## The OptionRow or SliderRow for a settings key (for tests).
-func row_for(key: StringName) -> SettingRow:
-	return _rows.get(key)
-
-
 func _option(parent: Control, key: StringName, caption: String, options: Array[String]) -> void:
 	var option := OptionRow.new()
 	option.setup(caption, options)

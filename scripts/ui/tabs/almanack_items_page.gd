@@ -56,11 +56,6 @@ static func discovered() -> Array[StringName]:
 	return out
 
 
-## Focus the first entry (for the menu to call once visible).
-func focus_list() -> void:
-	_list.focus_first()
-
-
 ## The control that should take focus, or null when nothing is listed.
 func focus_target() -> Control:
 	return _list.entry_button(0) if _list.entry_count() > 0 else null

@@ -5,7 +5,7 @@
 [ext_resource type="Script" path="res://scripts/world/farm_grid.gd" id="farm_grid_script"]
 [ext_resource type="Script" path="res://scripts/world/crop_field.gd" id="crop_field_script"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="debug_hud_scene"]
-[ext_resource type="Script" path="res://scripts/world/sky.gd" id="sky_script"]
+[ext_resource type="Script" path="res://scripts/world/world_sky.gd" id="sky_script"]
 [ext_resource type="Script" path="res://scripts/world/day_cycle.gd" id="day_cycle_script"]
 [ext_resource type="PackedScene" uid="uid://b0mnopqlx5dix" path="res://scenes/actors/player.tscn" id="2_b2cq8"]
 [ext_resource type="Texture2D" uid="uid://8cd75smu56l5" path="res://graphics/Ninja Adventure - Asset Pack/Ninja Adventure - Asset Pack/Backgrounds/Tilesets/TilesetFloor.png" id="2_xb4v1"]
