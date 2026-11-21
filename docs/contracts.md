@@ -244,3 +244,19 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   a spotted crop (`Crop.blight_warning`) turns blighted next morning unless hoed. A warned crop also gets one weed so the
   existing hoe check (`weeds > 0`) accepts it; `Crop.clear_weeds()` cures the warning.
 - **CropField**: signal `crop_reaped(cell, crop_id)` feeds the rotation memory. **Crop**: `blight_warning`.
+
+## Save/load, title and session (roadmap 26)
+- **SaveManager additions**: `snapshot() -> Dictionary` (every provider's `to_dict()`), `peek_summary() -> {day_index, date, saved_at}`
+  (cheap look for the title; `{}` if unreadable), `migrate(data, target := SAVE_VERSION)` + `migrations: Dictionary[int, Callable]`
+  (step `v` upgrades version v to v+1), `backup_path()`, `pending_keys()`, `discard_pending()`, `last_message`,
+  `restored_from_backup`, signal `backup_restored`. `has_save()` is true if the file or its `.bak` exists.
+- **Writes** go to `<path>.tmp` then rename; the previous valid save is copied to `<path>.bak`. A damaged main file (bad JSON, missing
+  `sections`) loads the backup and sets `restored_from_backup`; a newer `save_version` returns `ERR_FILE_UNRECOGNIZED` (no fallback).
+- **Late providers**: `load_game()` keeps sections nobody has registered yet and delivers each inside `register()`. So a scene-owned
+  provider must tolerate `from_dict()` being called from its own `_ready()` before it is fully set up (stash it and apply once ready;
+  see `Livestock` and `Workstations`). `new_game()` drops pending sections. Do not rely on `reset()` having run first.
+- **GameSession** (autoload): `start_new()`, `continue_game() -> Error`, `save_and_quit()`, `quit_to_title()`, `in_game`. Continue loads
+  *before* the level exists. It enables `SaveManager.autosave_enabled`, adds a `PlayerState` provider (key `player`: highlighter) to the
+  Level, shows a "Saved" toast after the morning fade-in, and hooks any node with signals `save_and_quit_requested` /
+  `quit_requested` (group `GameMenu`) to `save_and_quit()` / `quit_to_title()` (no save).
+- **Boot**: main scene is `scenes/ui/title.tscn`. Scenes that boot straight into the level (tests, `tools/*`) never enable autosave.

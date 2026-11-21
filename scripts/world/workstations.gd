@@ -22,6 +22,8 @@ const YARD_SPACING := 2
 var _level: Level
 var _stations: Array[Station] = []
 var _screen: CraftingScreen
+var _pending: Dictionary = {}  # a save section delivered before _bind() ran
+var _has_pending: bool = false
 
 
 func _ready() -> void:
@@ -128,9 +130,11 @@ func to_dict() -> Dictionary:
 
 ## Replace all stations with the saved ones.
 func from_dict(data: Dictionary) -> void:
-	_clear()
 	if _level == null:
+		_pending = data
+		_has_pending = true
 		return
+	_clear()
 	for entry: Dictionary in data.get("stations", []):
 		var id := StringName(entry.get("id", ""))
 		var cell: Vector2i = entry.get("cell", Vector2i.ZERO)
@@ -143,6 +147,7 @@ func from_dict(data: Dictionary) -> void:
 
 ## New game: drop everything and lay out the starter yard again.
 func reset() -> void:
+	_has_pending = false
 	_clear()
 	if _level and starter_yard:
 		_place_starter_yard()
@@ -154,7 +159,10 @@ func _bind() -> void:
 	_level = get_parent() as Level
 	if _level == null:
 		_level = get_tree().get_first_node_in_group("Level") as Level
-	if _level and _stations.is_empty() and starter_yard:
+	if _level and _has_pending:
+		_has_pending = false
+		from_dict(_pending)
+	elif _level and _stations.is_empty() and starter_yard:
 		_place_starter_yard()
 
 
