@@ -54,6 +54,21 @@ func close() -> void:
 	closed.emit()
 
 
+## Fill this screen with the standard modal look: a dimmed backdrop and a centred
+## PanelFrame `width` pixels wide. Call once from _ready() after super(); returns the frame.
+func build_modal(width: int) -> PanelFrame:
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	var dim := ColorRect.new()
+	dim.color = UIPalette.SHADOW
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(dim)
+	var frame: PanelFrame = preload("res://scenes/ui/kit/panel_frame.tscn").instantiate()
+	frame.min_width = width
+	add_child(frame)
+	return frame
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	# Ignore the press that opened us, since menu and ui_cancel can share a key.
 	if not is_open or Engine.get_process_frames() == _opened_frame:

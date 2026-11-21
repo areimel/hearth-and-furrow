@@ -113,6 +113,16 @@ and lists it in `pending_placeholders()`. Any other missing path is a `validate(
 - `price_of(id)` (item or animal row), `buy_price(id)`, `sell_price(id)`, `sell_multiplier()` ← market-day hook
 - `buy(id, n) -> bool` (coins → Inventory), `sell(id, n) -> int` coins earned (records `sold.<id>`)
 - signals `coins_changed(coins, delta)`, `item_bought(id, n, coins)`, `item_sold(id, n, coins)`
+- Shops (`data/shops.gd` → `ShopData`; `Content.shop(id)`, `Content.shops()`): wares are
+  `item` / `animal:<id>` / `tool_upgrade:<ToolKind>` / `station:<id>` (a kit of build materials),
+  with optional price, daily `stock`, `seasons`, `sowable`, `unlock`, `requires` (paid conversion).
+  Buy rules (`cats`/`tags`/`ids` + `factor`) say what the keeper pays for.
+  Ware ids default to `<kind>:<target>` (e.g. `item:wheat_seed`, `tool_upgrade:1`).
+- `shop_buy_price(shop, entry)`, `shop_sell_price(shop, item_id)` (base x factor x market-day),
+  `shop_stock_left(shop, entry)` (-1 unlimited), `shop_block_reason(shop, entry) -> String`,
+  `shop_buy(shop_id, entry_id) -> String` ("" = bought, else the refusal; all-or-nothing),
+  `shop_sell(shop_id, item_id, n) -> int`. Stock sold per day is saved under `economy`
+  (`sold_today`) and restocks in `GameClock.day_ending`. Goods logic lives in `ShopDeals`.
 
 **Relationships** (save key `relationships`) — points 0..1000, hearts = points/100.
 - `points(npc)`, `hearts(npc)`, `add_points(npc, n)`, `talk(npc) -> bool` (first today: +20)
@@ -125,6 +135,18 @@ and lists it in `pending_placeholders()`. Any other missing path is a `validate(
 - `start(id) -> bool`, `condition_progress(id, index) -> int`, `is_ready(id)`, `complete(id) -> bool`
   (consumes `deliver_item`s, grants rewards), `refresh()` (auto on Inventory/Progress/Relationships change)
 - signals `quest_started(id)`, `objective_progress(id, index, current, required)`, `quest_ready(id)`, `quest_completed(id)`
+
+## Shops UI and feature root
+- `ShopScreen` (`scenes/ui/shop_screen.tscn`, group `ShopScreen`, extends `UIScreen`):
+  `open_for(shop_id) -> bool`, `show_tab(ShopScreen.Tab.BUY | SELL)`. Q/E (`tool_backward` /
+  `tool_forward`, shoulder buttons) switch tabs; accept buys/sells one; Shift (pad X) + accept
+  sells the stack; cancel closes.
+- `Shops` (`scenes/world/shops.tscn`, add as a child of Level): `open(shop_id) -> bool`,
+  `is_open_today()` (festival `shops_closed`). On ready it calls `Villagers.register_option(
+  keeper, "Trade", open.bind(shop_id), is_open_today)` for every shop if a `Villagers` node
+  (group `Villagers`) exists (retried once a frame later), else does nothing.
+- Kit additions: `ItemRow`, `ScreenLocator.find_or_create(tree, group, scene, fallback_parent)`,
+  `ListMenu.set_entry_greyed(i, bool)`, `UIScreen.build_modal(width) -> PanelFrame`.
 
 ## Day-end order (`GameClock.advance_day()` is the only way a day ends)
 Whoever ends the day (bed, `passed_out` handler, debug key) plays its transition, then calls

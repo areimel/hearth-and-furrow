@@ -211,3 +211,33 @@ func tool_tier(id: StringName, row: Dictionary) -> ToolTierData:
 	res.area = row.get("area", 1)
 	res.power = row.get("power", 1.0)
 	return res
+
+
+func shop(id: StringName, row: Dictionary) -> ShopData:
+	var res := ShopData.new()
+	res.id = id
+	res.display_name = row.get("name", String(id))
+	res.keeper = row.get("keeper", &"")
+	for w: Dictionary in row.get("sells", []):
+		res.wares.append(_ware(id, w))
+	for rule: Dictionary in row.get("buys", []):
+		res.buy_rules.append({"cats": rule.get("cats", []), "tags": rule.get("tags", []),
+			"ids": rule.get("ids", []), "factor": rule.get("factor", 1.0)})
+	return res
+
+
+# Normalises one ware row: fills defaults and works out its kind, target and unique id.
+func _ware(shop_id: StringName, w: Dictionary) -> Dictionary:
+	var kind := &"item"
+	for k: StringName in [&"animal", &"tool_upgrade", &"station"]:
+		if w.has(k):
+			kind = k
+	var target: Variant = w.get(kind)
+	if target == null:
+		problems.append("shop %s: ware without a target" % shop_id)
+	var ware_id: StringName = w.get("id", StringName("%s:%s" % [kind, target]))
+	return {"id": ware_id, "kind": kind, "target": target, "price": w.get("price", -1),
+		"stock": w.get("stock", -1), "seasons": w.get("seasons", []),
+		"sowable": w.get("sowable", false), "unlock": w.get("unlock", &""),
+		"requires": w.get("requires", {}), "amount": w.get("amount", 1),
+		"label": w.get("label", "")}

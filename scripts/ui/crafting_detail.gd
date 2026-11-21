@@ -6,8 +6,8 @@ class_name CraftingDetail extends VBoxContainer
 const WRAP_WIDTH := 120
 
 var _title: Label
-var _needs: HBoxContainer
-var _makes: HBoxContainer
+var _needs: ItemRow
+var _makes: ItemRow
 var _time: Label
 var _chain: Label
 var _note: Label
@@ -40,39 +40,15 @@ func _init() -> void:
 ## reason it cannot start (locked, busy).
 func show_recipe(recipe: RecipeData, note: String = "") -> void:
 	_title.text = recipe.display_name
-	_fill(_needs, recipe.inputs)
-	_fill(_makes, recipe.outputs)
+	_needs.show_items(recipe.inputs, true)
+	_makes.show_items(recipe.outputs)
 	_time.text = "Time: " + CraftingText.duration(recipe)
 	_chain.text = CraftingText.chain_preview(recipe)
 	_note.text = note
 	_note.visible = not note.is_empty()
 
 
-func _row(caption: String) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 1)
-	var label := Label.new()
-	label.text = caption
-	label.custom_minimum_size.x = 30
-	row.add_child(label)
+func _row(caption: String) -> ItemRow:
+	var row := ItemRow.new(caption)
 	add_child(row)
 	return row
-
-
-func _fill(row: HBoxContainer, items: Dictionary) -> void:
-	while row.get_child_count() > 1:
-		var old := row.get_child(1)
-		row.remove_child(old)
-		old.queue_free()
-	for id: StringName in items:
-		var need: int = int(items[id])
-		var slot := ItemSlot.new()
-		slot.focus_mode = Control.FOCUS_NONE
-		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.set_item(id, need)
-		if row == _needs:
-			var have := Inventory.count(id)
-			slot.set_count_text("%d/%d" % [have, need],
-					UIPalette.CRIMSON if have < need else UIPalette.PARCHMENT_LIGHT)
-			slot.dimmed = have < need
-		row.add_child(slot)

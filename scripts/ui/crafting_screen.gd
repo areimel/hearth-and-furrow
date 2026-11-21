@@ -20,15 +20,7 @@ var _recipe_ids: Array[StringName] = []
 func _ready() -> void:
 	super()
 	add_to_group(CRAFTING_GROUP)
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-	var dim := ColorRect.new()
-	dim.color = UIPalette.SHADOW
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(dim)
-	_frame = preload("res://scenes/ui/kit/panel_frame.tscn").instantiate()
-	_frame.min_width = FRAME_WIDTH
-	add_child(_frame)
+	_frame = build_modal(FRAME_WIDTH)
 	_build_body()
 	closed.connect(_detach)
 
@@ -99,7 +91,7 @@ func _refresh_state() -> void:
 	if station == null:
 		return
 	for i in _recipe_ids.size():
-		_grey(_menu.entry_button(i), not _is_available(_recipe_ids[i]))
+		_menu.set_entry_greyed(i, not _is_available(_recipe_ids[i]))
 	_show_detail()
 	_show_jobs()
 
@@ -135,14 +127,6 @@ func _block_reason(recipe: RecipeData) -> String:
 	if not station.has_free_slot():
 		return "All slots busy"
 	return ""
-
-
-func _grey(button: Button, greyed: bool) -> void:
-	for state in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
-		if greyed:
-			button.add_theme_color_override(state, UIPalette.INK_DISABLED)
-		else:
-			button.remove_theme_color_override(state)
 
 
 # ---------------------------------------------------------------- events

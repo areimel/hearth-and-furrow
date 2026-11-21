@@ -16,6 +16,7 @@ const Npcs :=preload("res://data/npcs.gd")
 const Quests := preload("res://data/quests.gd")
 const Festivals := preload("res://data/festivals.gd")
 const ToolTiers := preload("res://data/tool_tiers.gd")
+const Shops := preload("res://data/shops.gd")
 
 var _items: Dictionary[StringName, ItemData] = {}
 var _crops: Dictionary[StringName, CropData] = {}
@@ -27,6 +28,7 @@ var _npcs:Dictionary[StringName, NPCData] = {}
 var _quests: Dictionary[StringName, QuestData] = {}
 var _festivals: Dictionary[StringName, FestivalData] = {}
 var _tool_tiers: Dictionary[StringName, ToolTierData] = {}
+var _shops: Dictionary[StringName, ShopData] = {}
 var _crop_by_seed: Dictionary[StringName, CropData] = {}
 var _builder: Builder
 var _warned: Dictionary[String, bool] = {}
@@ -218,6 +220,15 @@ func tool_tiers() -> Array[ToolTierData]:
 	return out
 
 
+func shop(id: StringName) -> ShopData:
+	return _lookup(_shops, id, "shop") as ShopData
+
+
+func shops() -> Array[ShopData]:
+	_ensure_built()
+	return Array(_shops.values(), TYPE_OBJECT, &"Resource", ShopData)
+
+
 # --- Diagnostics ---
 
 ## Every content problem found (broken id references, unreachable chains, bad texture
@@ -283,6 +294,8 @@ func _ensure_built() -> void:
 		_festivals[id] = _builder.festival(id, Festivals.ROWS[id])
 	for id: StringName in ToolTiers.ROWS:
 		_tool_tiers[id] = _builder.tool_tier(id, ToolTiers.ROWS[id])
+	for id: StringName in Shops.ROWS:
+		_shops[id] = _builder.shop(id, Shops.ROWS[id])
 
 
 func _lookup(table: Dictionary, id: StringName, kind: String) -> Resource:
