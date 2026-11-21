@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Headless verification gate. Run from anywhere: tools/check.sh [--quick]
-#   import -> parse-check every script -> unit tests -> smoke run of the main scene
+# Headless verification gate. Run from anywhere: tools/check.sh [--quick] [--full]
+#   import -> parse-check every script -> unit tests -> smoke runs (title = main scene, then
+#   the level directly); --full adds the 112-day year simulation (tools/year_sim.tscn)
 # Exits non-zero on the first failing stage. GODOT overrides the binary path.
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -37,12 +38,34 @@ grep -E '^(PASS|FAIL|TESTS)' "$LOG/tests.log"
 errors_in "$LOG/tests.log" && fail=1
 [ "$rc" -ne 0 ] && fail=1
 
-if [ "${1:-}" != "--quick" ]; then
-	stage "smoke run (300 frames)"
-	timeout 120 "$GODOT" --path . --headless --quit-after 300 >"$LOG/run.log" 2>&1
-	rc=$?
-	errors_in "$LOG/run.log" | sort | uniq -c | head -30 && fail=1
+quick=0; full=0
+for arg in "$@"; do
+	[ "$arg" = "--quick" ] && quick=1
+	[ "$arg" = "--full" ] && full=1
+done
+
+# Boots one scene headless for 300 frames; extra args follow the godot command (scene path).
+smoke() {
+	local name="$1"; shift
+	stage "smoke run: $name (300 frames)"
+	timeout 120 "$GODOT" --path . --headless --quit-after 300 "$@" >"$LOG/run_$name.log" 2>&1
+	local rc=$?
+	errors_in "$LOG/run_$name.log" | sort | uniq -c | head -30 && fail=1
 	[ "$rc" -ne 0 ] && { echo "smoke run exit code $rc"; fail=1; }
+}
+
+if [ "$quick" -eq 0 ]; then
+	smoke title                                    # the project's main scene
+	smoke level res://scenes/levels/level.tscn     # gameplay, straight into the world
+fi
+
+if [ "$full" -eq 1 ]; then
+	stage "year simulation (112 days)"
+	timeout 580 "$GODOT" --path . --headless res://tools/year_sim.tscn >"$LOG/year.log" 2>&1
+	rc=$?
+	grep -E '^(SIM|SEASON|YEAR)' "$LOG/year.log"
+	errors_in "$LOG/year.log" | sort | uniq -c | head -30 && fail=1
+	[ "$rc" -ne 0 ] && { echo "year simulation exit code $rc"; fail=1; }
 fi
 
 echo

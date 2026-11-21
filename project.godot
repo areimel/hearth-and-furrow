@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Hearth & Furrow"
-run/main_scene="uid://dkaf0otbgtrp5"
+run/main_scene="res://scenes/ui/title.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -35,6 +35,7 @@ Inventory="*res://scripts/autoload/inventory.gd"
 Economy="*res://scripts/autoload/economy.gd"
 Relationships="*res://scripts/autoload/relationships.gd"
 QuestManager="*res://scripts/autoload/quest_manager.gd"
+GameSession="*res://scripts/world/game_session.gd"
 
 [display]
 
