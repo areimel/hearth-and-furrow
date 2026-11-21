@@ -16,7 +16,7 @@ func before_each() -> void:
 
 
 func _open() -> void:
-	title = load("res://scenes/ui/title.tscn").instantiate()
+	title = load("res://scenes/ui/title_screen.tscn").instantiate()
 	title.auto_connect = false
 	title.action_chosen.connect(func(action: StringName) -> void: _chosen.append(action))
 	tree.root.add_child(title)

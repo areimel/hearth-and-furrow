@@ -55,6 +55,35 @@ func _labels(theme: Theme) -> void:
 	theme.set_color("font_color", "HudLabel", UIPalette.PARCHMENT_LIGHT)
 	theme.set_color("font_outline_color", "HudLabel", UIPalette.WOOD_DARK)
 	theme.set_constant("outline_size", "HudLabel", 1)
+	_text_labels(theme)
+
+
+## Semantic text styles so no script sets a colour or size itself. Everything small derives
+## from SmallLabel, so the Large text option (which resizes SmallLabel) scales them too.
+func _text_labels(theme: Theme) -> void:
+	# NoteLabel: wrapped body text (the script only sets the wrap, see UIText.label).
+	theme.set_type_variation("NoteLabel", "Label")
+	theme.set_color("font_color", "NoteLabel", UIPalette.INK)
+	# WarnLabel / GoodLabel: refusals and shortfalls / confirmations and gains.
+	theme.set_type_variation("WarnLabel", "Label")
+	theme.set_color("font_color", "WarnLabel", UIPalette.CRIMSON)
+	theme.set_type_variation("GoodLabel", "Label")
+	theme.set_color("font_color", "GoodLabel", UIPalette.MOSS)
+	# HintLabel: dim helper text (flavour, key help). AccentLabel: small rust highlight.
+	theme.set_type_variation("HintLabel", "SmallLabel")
+	theme.set_color("font_color", "HintLabel", UIPalette.WOOD)
+	theme.set_type_variation("AccentLabel", "SmallLabel")
+	theme.set_color("font_color", "AccentLabel", UIPalette.RUST)
+	# CountLabel: the corner number on a slot, light on a dark chip; CountShortLabel when short.
+	theme.set_type_variation("CountLabel", "SmallLabel")
+	theme.set_color("font_color", "CountLabel", UIPalette.PARCHMENT_LIGHT)
+	var chip := StyleBoxFlat.new()
+	chip.bg_color = Color(UIPalette.WOOD_DARK, 0.8)
+	chip.content_margin_left = 1
+	chip.content_margin_right = 1
+	theme.set_stylebox("normal", "CountLabel", chip)
+	theme.set_type_variation("CountShortLabel", "CountLabel")
+	theme.set_color("font_color", "CountShortLabel", UIPalette.CRIMSON)
 
 
 func _buttons(theme: Theme) -> void:
@@ -91,6 +120,25 @@ func _buttons(theme: Theme) -> void:
 	theme.set_color("font_focus_color", "ListEntry", UIPalette.INK)
 	theme.set_color("font_pressed_color", "ListEntry", UIPalette.INK)
 	theme.set_color("font_disabled_color", "ListEntry", UIPalette.INK_DISABLED)
+	# ListEntryGrey: an entry that is focusable but cannot be had right now.
+	theme.set_type_variation("ListEntryGrey", "ListEntry")
+	for color_name in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+		theme.set_color(color_name, "ListEntryGrey", UIPalette.INK_DISABLED)
+	_tab_buttons(theme)
+
+
+## TabButton / TabButtonRaised: the title buttons of a TabStrip (raised = the selected one).
+func _tab_buttons(theme: Theme) -> void:
+	for raised in [false, true]:
+		var type_name := "TabButtonRaised" if raised else "TabButton"
+		var box := _box(UIPalette.PARCHMENT_LIGHT if raised else UIPalette.WOOD,
+				UIPalette.GOLD if raised else UIPalette.WOOD_DARK, Vector2i(4, 1))
+		box.border_width_bottom = 2 if raised else 1
+		theme.set_type_variation(type_name, "Button")
+		for style_name in ["normal", "hover", "pressed", "disabled", "focus"]:
+			theme.set_stylebox(style_name, type_name, box)
+		for color_name in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+			theme.set_color(color_name, type_name, UIPalette.INK if raised else UIPalette.PARCHMENT_LIGHT)
 
 
 func _panels(theme: Theme) -> void:

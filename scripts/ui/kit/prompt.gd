@@ -11,7 +11,7 @@ var _action: StringName = &""
 
 func _ready() -> void:
 	_panel.hide()
-	Input.joy_connection_changed.connect(func(_id: int, _on: bool) -> void: _refresh_glyph())
+	add_to_group(InputGlyphs.GROUP)
 
 
 ## Show "[glyph for action] text".
@@ -25,6 +25,11 @@ func show_prompt(action: StringName, text: String) -> void:
 ## Hide the hint.
 func hide_prompt() -> void:
 	_panel.hide()
+
+
+## Redraw the glyph for the current device (InputGlyphs.GROUP calls this).
+func refresh_glyphs() -> void:
+	_refresh_glyph()
 
 
 func _refresh_glyph() -> void:

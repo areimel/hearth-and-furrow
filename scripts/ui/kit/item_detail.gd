@@ -45,7 +45,7 @@ func _init() -> void:
 	_value = IconLabel.new()
 	add_child(_value)
 	_note = _wrapped()
-	_note.add_theme_color_override("font_color", UIPalette.RUST)
+	_note.theme_type_variation = &"HeaderLabel"
 	add_child(_note)
 
 

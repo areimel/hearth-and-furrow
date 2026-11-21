@@ -1,10 +1,14 @@
 class_name TabStrip extends HBoxContainer
 ## A row of tab titles with the selected one raised, flanked by the input glyphs that
 ## switch tabs (by default tool_backward / tool_forward: Q and E, or the shoulder
-## buttons). The strip is display-only: buttons take no focus, the owner calls select().
+## buttons). While visible it listens for those actions and emits `tab_stepped`; buttons
+## take no focus and the owner calls select().
 
 ## A tab title was clicked.
 signal tab_pressed(index: int)
+## The back / forward action was pressed while the strip is visible; `index` is the tab to
+## show next (wrapped). The strip does not select it: the owner calls select().
+signal tab_stepped(index: int)
 
 ## Show the back/forward glyphs at either end.
 @export var show_hints: bool = true
@@ -32,15 +36,25 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	Input.joy_connection_changed.connect(func(_id: int, _on: bool) -> void: _refresh_glyphs())
-	_refresh_glyphs()
+	add_to_group(InputGlyphs.GROUP)
+	refresh_glyphs()
 
 
-## Use other actions for the glyphs (e.g. ui_left / ui_right for a sub-page strip).
+## Use other actions for glyphs and stepping (e.g. ui_left / ui_right for a sub-page strip).
 func set_hint_actions(back: StringName, forward: StringName) -> void:
 	_back_action = back
 	_forward_action = forward
-	_refresh_glyphs()
+	refresh_glyphs()
+
+
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree() or event.is_echo() or _buttons.size() < 2:
+		return
+	for step in [-1, 1]:
+		if event.is_action_pressed(_forward_action if step > 0 else _back_action):
+			get_viewport().set_input_as_handled()
+			tab_stepped.emit(wrapped(_selected, step))
+			return
 
 
 ## Replace the tabs with buttons titled `titles`; the first becomes selected.
@@ -65,7 +79,7 @@ func select(index: int) -> void:
 		return
 	_selected = clampi(index, 0, _buttons.size() - 1)
 	for i in _buttons.size():
-		_style(_buttons[i], i == _selected)
+		_buttons[i].theme_type_variation = &"TabButtonRaised" if i == _selected else &"TabButton"
 
 
 ## Index of the raised tab.
@@ -83,26 +97,6 @@ func wrapped(index: int, step: int) -> int:
 	return posmod(index + step, maxi(_buttons.size(), 1))
 
 
-func _style(button: Button, raised: bool) -> void:
-	var fill := UIPalette.PARCHMENT_LIGHT if raised else UIPalette.WOOD
-	var edge := UIPalette.GOLD if raised else UIPalette.WOOD_DARK
-	var font := UIPalette.INK if raised else UIPalette.PARCHMENT_LIGHT
-	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
-		var box := StyleBoxFlat.new()
-		box.bg_color = fill
-		box.border_color = edge
-		box.set_border_width_all(1)
-		box.border_width_bottom = 2 if raised else 1
-		box.content_margin_left = 4
-		box.content_margin_right = 4
-		box.content_margin_top = 1
-		box.content_margin_bottom = 1
-		box.anti_aliasing = false
-		button.add_theme_stylebox_override(state, box)
-	for color_name in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		button.add_theme_color_override(color_name, font)
-
-
 func _glyph_rect() -> TextureRect:
 	var rect := TextureRect.new()
 	rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
@@ -112,7 +106,8 @@ func _glyph_rect() -> TextureRect:
 	return rect
 
 
-func _refresh_glyphs() -> void:
+## Redraw the back / forward glyphs for the current device (InputGlyphs.GROUP calls this).
+func refresh_glyphs() -> void:
 	_back.texture = InputGlyphs.texture_for(_back_action)
 	_forward.texture = InputGlyphs.texture_for(_forward_action)
 	_back.visible = show_hints

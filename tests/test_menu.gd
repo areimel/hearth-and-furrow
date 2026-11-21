@@ -11,7 +11,7 @@ func before_each() -> void:
 
 
 func _spawn() -> void:
-	menu = load("res://scenes/ui/menu.tscn").instantiate()
+	menu = load("res://scenes/ui/game_menu.tscn").instantiate()
 	tree.root.add_child.call_deferred(menu)
 	await tree.process_frame
 
@@ -148,15 +148,59 @@ func test_pack_uses_a_linen_sack_on_second_accept() -> void:
 	await _despawn()
 
 
-func test_journal_lists_active_quests_and_readiness() -> void:
+func _set_prologue_probes(sown: int, watered: int) -> void:
+	QuestManager.register_probe(&"sown.wheat", func() -> int: return sown)
+	QuestManager.register_probe(&"watered.cabbage", func() -> int: return watered)
+
+
+func test_journal_shows_only_the_prologue_steps_reached() -> void:
 	await _spawn()
+	_set_prologue_probes(0, 0)
 	QuestManager.start(&"prologue")
 	var tab: JournalTab = menu.tab(&"journal")
 	tab.on_shown()
 	eq(tab.listed_quests(), [&"prologue"], "active quest listed")
 	var lines := QuestText.objectives(&"prologue")
-	check(lines.size() >= 1, "objectives listed")
+	eq(lines.size(), 1, "only the first step is shown")
 	eq(lines[0]["done"], false, "not done yet")
+	check(tab.body_text().contains("A Holding of One's Own"), "title shown")
+	check(tab.body_text().contains("Thomas Ashby"), "giver shown")
+	_set_prologue_probes(4, 1)
+	QuestManager.refresh()
+	tab.on_shown()
+	lines = QuestText.objectives(&"prologue")
+	eq(lines.size(), 3, "two steps done and the sleep step live")
+	eq([lines[0]["done"], lines[1]["done"], lines[2]["done"]], [true, true, false], "ticks")
+	eq(lines[0]["progress"], "4/4", "counted steps show progress")
+	check(tab.body_text().contains("Reward: 50 coins"), "reward preview")
+	_set_prologue_probes(0, 0)
+	await _despawn()
+
+
+func test_journal_marks_a_quest_ready_to_hand_in() -> void:
+	await _spawn()
+	QuestManager.from_dict({"states": {"prologue": G.QuestState.COMPLETE}})
+	QuestManager.start(&"errand_miller_wheat")
+	var tab: JournalTab = menu.tab(&"journal")
+	tab.on_shown()
+	check(not tab.body_text().contains("Ready to hand in"), "not ready without the loaf")
+	Inventory.add(&"bread", 1)
+	tab.on_shown()
+	check(tab.body_text().contains("Ready to hand in - see Ned Miller"), "ready marker names the giver")
+	await _despawn()
+
+
+func test_journal_folds_completed_quests_and_shows_the_favour() -> void:
+	await _spawn()
+	QuestManager.from_dict({"states": {"prologue": G.QuestState.COMPLETE,
+		"errand_miller_wheat": G.QuestState.COMPLETE}})
+	var tab: JournalTab = menu.tab(&"journal")
+	tab.on_shown()
+	eq(tab.listed_quests(), [], "completed quests are folded away")
+	tab._on_selected(JournalTab.DONE_ENTRY)
+	check(&"errand_miller_wheat" in tab.listed_quests(), "unfolded")
+	tab._on_focused(&"errand_miller_wheat")
+	check(tab.body_text().contains("Grind my grain, Ned?"), "daily favour shown once earned")
 	await _despawn()
 
 
@@ -182,6 +226,20 @@ func test_almanack_feast_and_sowing_and_discoveries() -> void:
 	check(&"trout" not in AlmanackItemsPage.discovered(), "trout not yet obtained")
 	Progress.record(&"caught", &"trout", 1)
 	check(&"trout" in AlmanackItemsPage.discovered(), "trout discovered after a catch")
+
+
+func test_almanack_lore_lists_only_what_was_met() -> void:
+	SaveManager.new_game()
+	var titles := AlmanackLorePage.notes().map(func(n: Dictionary) -> String: return n["title"])
+	check("A Holding of One's Own" not in titles, "unstarted quest has no note")
+	check("Bread" not in titles, "chain not crafted yet")
+	QuestManager.start(&"prologue")
+	Progress.record(&"crafted", &"bread", 1)
+	titles = AlmanackLorePage.notes().map(func(n: Dictionary) -> String: return n["title"])
+	check("A Holding of One's Own" in titles, "started quest note")
+	check("Bread" in titles, "finished chain note")
+	check("May Day" in titles, "feast of the season")
+	check("Harvest Home" not in titles, "later feast not yet met")
 
 
 func test_every_tab_keeps_focus_inside_itself() -> void:

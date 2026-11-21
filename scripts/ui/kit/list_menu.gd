@@ -65,12 +65,7 @@ func entry_button(index: int) -> Button:
 ## Show entry `index` greyed (still focusable and selectable, unlike `disabled`), e.g. a
 ## recipe that cannot be started or a ware that cannot be afforded.
 func set_entry_greyed(index: int, greyed: bool) -> void:
-	var button := _buttons[index]
-	for state in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
-		if greyed:
-			button.add_theme_color_override(state, UIPalette.INK_DISABLED)
-		else:
-			button.remove_theme_color_override(state)
+	_buttons[index].theme_type_variation = &"ListEntryGrey" if greyed else &"ListEntry"
 
 
 func _unhandled_input(event: InputEvent) -> void:

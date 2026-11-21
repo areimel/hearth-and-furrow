@@ -35,6 +35,11 @@ func _ready() -> void:
 	_place_prompt.call_deferred()
 
 
+func _input(event: InputEvent) -> void:
+	if InputGlyphs.note_event(event):
+		get_tree().call_group(InputGlyphs.GROUP, &"refresh_glyphs")
+
+
 ## Show "[glyph for action] text" above the hotbar (e.g. show_prompt(&"action", "Talk")).
 func show_prompt(action: StringName, text: String) -> void:
 	_prompt.show_prompt(action, text)

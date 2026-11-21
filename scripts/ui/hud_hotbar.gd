@@ -27,14 +27,7 @@ func _decorate(slot: ItemSlot, index: int) -> void:
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var number := Label.new()
 	number.text = str((index + 1) % 10)
-	number.theme_type_variation = &"SmallLabel"
-	number.add_theme_color_override("font_color", UIPalette.PARCHMENT_LIGHT)
-	var backing := StyleBoxFlat.new()
-	backing.bg_color = Color(UIPalette.WOOD_DARK, 0.75)
-	backing.content_margin_left = 1
-	backing.content_margin_right = 1
-	number.add_theme_stylebox_override("normal", backing)
-	number.position = Vector2(0, 0)
+	number.theme_type_variation = &"CountLabel"
 	number.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	slot.add_child(number)
 

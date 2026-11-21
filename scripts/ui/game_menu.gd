@@ -1,7 +1,8 @@
 class_name GameMenu extends UIScreen
-## The tabbed pause menu. Instance scenes/ui/menu.tscn once under the level's overlay and
+## The tabbed pause menu. Instance scenes/ui/game_menu.tscn once under the level's overlay and
 ## call open() (or open_tab()) when the `menu` action is pressed; it closes itself on
-## menu / ui_cancel. tool_backward / tool_forward (Q / E, shoulder buttons) switch tabs.
+## menu / ui_cancel. tool_backward / tool_forward (Q / E, shoulder buttons) switch tabs
+## (its TabStrip reads them).
 ## The game clock is paused while it is open (unless the player turned that off).
 ##
 ## Adding a tab: write a scene whose root script extends MenuTab and add ONE line to TABS.
@@ -36,23 +37,14 @@ var _hints: KeyHints
 func _ready() -> void:
 	super()
 	add_to_group(MENU_GROUP)
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-	var dim := ColorRect.new()
-	dim.color = UIPalette.SHADOW
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(dim)
-	var window := PanelContainer.new()
-	window.custom_minimum_size = WINDOW_SIZE
-	window.set_anchors_preset(Control.PRESET_CENTER)
-	window.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	window.grow_vertical = Control.GROW_DIRECTION_BOTH
-	add_child(window)
+	var window := build_modal(int(WINDOW_SIZE.x))
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 3)
-	window.add_child(column)
+	column.custom_minimum_size.y = WINDOW_SIZE.y - 8
+	window.add_content(column)
 	_strip = TabStrip.new()
 	_strip.tab_pressed.connect(show_tab)
+	_strip.tab_stepped.connect(show_tab)
 	column.add_child(_strip)
 	var host := Control.new()
 	host.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -141,17 +133,6 @@ func tab(tab_id: StringName) -> MenuTab:
 ## Index of the visible tab.
 func current_index() -> int:
 	return _index
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if is_open and event.is_action_pressed(&"tool_forward"):
-		switch_tab(1)
-		get_viewport().set_input_as_handled()
-	elif is_open and event.is_action_pressed(&"tool_backward"):
-		switch_tab(-1)
-		get_viewport().set_input_as_handled()
-	else:
-		super(event)
 
 
 func _grab_initial_focus() -> void:

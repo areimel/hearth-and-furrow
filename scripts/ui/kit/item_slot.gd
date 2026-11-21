@@ -47,13 +47,7 @@ func _init() -> void:
 	_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_label.add_theme_font_size_override("font_size", 8)
-	_label.add_theme_color_override("font_color", UIPalette.PARCHMENT_LIGHT)
-	var backing := StyleBoxFlat.new()
-	backing.bg_color = Color(UIPalette.WOOD_DARK, 0.8)
-	backing.content_margin_left = 1
-	backing.content_margin_right = 1
-	_label.add_theme_stylebox_override("normal", backing)
+	_label.theme_type_variation = &"CountLabel"
 	_label.visible = false
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_label)
@@ -82,11 +76,11 @@ func is_empty() -> bool:
 	return item_id.is_empty()
 
 
-## Replace the count with custom text (e.g. "3/2"), optionally coloured; cleared by
-## the next set_item().
-func set_count_text(text: String, color: Color = UIPalette.PARCHMENT_LIGHT) -> void:
+## Replace the count with custom text (e.g. "3/2"); `short` shows it in the warning
+## colour (not enough). Cleared by the next set_item().
+func set_count_text(text: String, short: bool = false) -> void:
 	_text_override = text
-	_label.add_theme_color_override("font_color", color)
+	_label.theme_type_variation = &"CountShortLabel" if short else &"CountLabel"
 	_refresh_label()
 
 
@@ -94,15 +88,15 @@ func _refresh_label() -> void:
 	if not _text_override.is_empty():
 		_label.text = _text_override
 	else:
-		_label.add_theme_color_override("font_color", UIPalette.PARCHMENT_LIGHT)
+		_label.theme_type_variation = &"CountLabel"
 		_label.text = str(count) if count > 1 else ""
 	_label.visible = not _label.text.is_empty()
 
 
 func _refresh_style() -> void:
 	var edge := UIPalette.GOLD if selected else UIPalette.WOOD_DARK
-	add_theme_stylebox_override("normal", _box(UIPalette.PARCHMENT_DARK, edge))
-	add_theme_stylebox_override("hover", _box(UIPalette.PARCHMENT, edge))
+	add_theme_stylebox_override("normal", _box(UIPalette.PARCHMENT, edge))
+	add_theme_stylebox_override("hover", _box(UIPalette.PARCHMENT_LIGHT, edge))
 	add_theme_stylebox_override("pressed", _box(UIPalette.PARCHMENT_LIGHT, UIPalette.GOLD))
 	add_theme_stylebox_override("disabled", _box(UIPalette.PARCHMENT_DARK, edge))
 	add_theme_stylebox_override("focus", _box(Color.TRANSPARENT, UIPalette.GOLD, 2))

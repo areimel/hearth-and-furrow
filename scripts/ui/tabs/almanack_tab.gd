@@ -1,10 +1,10 @@
 class_name AlmanackTab extends MenuTab
-## Two pages under one tab: the Almanack (date, weather lore, calendar, what to sow)
-## and the Discoveries list. ui_left / ui_right switch pages.
+## Three pages under one tab: the Almanack (date, weather lore, calendar, what to sow),
+## the Discoveries list and Lore (history notes for what the player has met).
+## ui_left / ui_right switch pages.
 
 var _strip: TabStrip
-var _page: AlmanackPage
-var _items: AlmanackItemsPage
+var _pages: Array[Control] = []
 var _index: int = 0
 
 
@@ -15,15 +15,14 @@ func _ready() -> void:
 	add_child(column)
 	_strip = TabStrip.new()
 	_strip.set_hint_actions(&"ui_left", &"ui_right")
-	_strip.set_tabs(["Almanack", "Discoveries"])
+	_strip.set_tabs(["Almanack", "Discoveries", "Lore"])
 	_strip.tab_pressed.connect(show_page)
+	_strip.tab_stepped.connect(show_page)
 	column.add_child(_strip)
-	_page = AlmanackPage.new()
-	_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(_page)
-	_items = AlmanackItemsPage.new()
-	_items.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(_items)
+	for page: Control in [AlmanackPage.new(), AlmanackItemsPage.new(), AlmanackLorePage.new()]:
+		page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		column.add_child(page)
+		_pages.append(page)
 
 
 func tab_title() -> String:
@@ -31,29 +30,29 @@ func tab_title() -> String:
 
 
 func on_shown() -> void:
-	_page.refresh()
-	_items.refresh()
+	for page in _pages:
+		page.refresh()
 	show_page(_index)
 
 
 func initial_focus() -> Control:
 	if _index == 1:
-		var target := _items.focus_target()
+		var target := (_pages[1] as AlmanackItemsPage).focus_target()
 		if target:
 			return target
-	return _page
+	return _pages[_index]
 
 
 func hints() -> Array[Dictionary]:
 	return [{"action": &"ui_left", "text": "Page"}]
 
 
-## Show page 0 (almanack) or 1 (discoveries) and move focus into it.
+## Show page 0 (almanack), 1 (discoveries) or 2 (lore) and move focus into it.
 func show_page(index: int) -> void:
-	_index = posmod(index, 2)
+	_index = posmod(index, _pages.size())
 	_strip.select(_index)
-	_page.visible = _index == 0
-	_items.visible = _index == 1
+	for i in _pages.size():
+		_pages[i].visible = i == _index
 	if is_visible_in_tree():
 		var target := initial_focus()
 		if target:
@@ -63,14 +62,3 @@ func show_page(index: int) -> void:
 ## The shown page index.
 func page_index() -> int:
 	return _index
-
-
-func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
-		return
-	if event.is_action_pressed(&"ui_right"):
-		show_page(_index + 1)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"ui_left"):
-		show_page(_index - 1)
-		get_viewport().set_input_as_handled()

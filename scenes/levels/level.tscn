@@ -32,7 +32,7 @@
 
 [ext_resource type="PackedScene" path="res://scenes/ui/build_menu.tscn" id="wired_buildmenu"]
 [ext_resource type="PackedScene" path="res://scenes/world/risk_system.tscn" id="wired_risksystem"]
-[ext_resource type="PackedScene" path="res://scenes/ui/menu.tscn" id="wired_gamemenu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/game_menu.tscn" id="wired_gamemenu"]
 [ext_resource type="PackedScene" path="res://scenes/world/quest_giver.tscn" id="wired_questgiver"]
 [ext_resource type="PackedScene" path="res://scenes/world/festival_director.tscn" id="wired_festivaldirector"]
 
