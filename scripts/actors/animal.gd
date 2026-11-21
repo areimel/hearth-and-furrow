@@ -56,7 +56,6 @@ var _frames: int = 1
 @onready var _interactable: Interactable = $Interactable
 @onready var _emote: Sprite2D = $Emote
 
-
 func _ready() -> void:
 	_emote.texture = load(HEART_EMOTE)
 	_emote.hide()

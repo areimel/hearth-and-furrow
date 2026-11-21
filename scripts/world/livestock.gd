@@ -3,6 +3,7 @@ class_name Livestock extends Node2D
 ## spawns the animals into `level.animals()`, creates a starter herd on a new game around
 ## a free pen near `pen_anchor`, and registers with SaveManager under `livestock`.
 
+const Balance := preload("res://data/balance.gd")
 const ANIMAL_SCENE := preload("res://scenes/actors/animal.tscn")
 const SAVE_KEY := &"livestock"
 ## Starter herd: species id -> count.
@@ -156,8 +157,8 @@ func _find_pen_center() -> Vector2:
 				break
 		if found:
 			break
-	var size := Vector2(PEN_CELLS * Data.TILE_SIZE)
-	return Vector2(best * Data.TILE_SIZE) + size / 2.0
+	var size := Vector2(PEN_CELLS * Balance.TILE_SIZE)
+	return Vector2(best * Balance.TILE_SIZE) + size / 2.0
 
 
 func _block_free(grid: FarmGrid, origin: Vector2i) -> bool:
