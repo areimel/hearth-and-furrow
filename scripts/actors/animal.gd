@@ -10,26 +10,13 @@ signal state_changed
 ## What interacting would do right now.
 enum Action { NONE, FEED, COLLECT, PET }
 
-## Product item -> verb shown on the prompt; other products read "Collect <item>".
-const PRODUCT_VERBS: Dictionary = {&"milk": "Milk", &"fleece": "Shear"}
-## Seasons in which grazing is not enough and the feed item is needed.
-const FEED_SEASONS: Array[int] = [G.Season.WINTER]
-const MOOD_MAX := 100
-const MOOD_START := 60
-## Below this mood the product takes one extra day.
-const LOW_MOOD := 30
-const MOOD_FED := 4
-const MOOD_GRAZED := 1
-const MOOD_PET := 6
-const MOOD_UNFED := -4
-
 ## Species id; set before adding to the tree (or call `setup`).
 @export var animal_id: StringName
 ## Radius in pixels the animal may stray from `home`.
 @export var home_radius: float = 40.0
 
 ## Mood 0..100; a low mood slows the product by a day.
-var mood: int = MOOD_START
+var mood: int = Balance.ANIMAL_MOOD_START
 ## Fed by hand today (cleared at day end).
 var fed_today: bool = false
 ## Petted today (cleared at day end).
@@ -95,7 +82,8 @@ func prompt_text() -> String:
 			return "Feed"
 		Action.COLLECT:
 			var item := Content.item(data.product_item)
-			return PRODUCT_VERBS.get(data.product_item, "Collect %s" % item.display_name.to_lower())
+			return data.collect_verb if not data.collect_verb.is_empty() \
+					else "Collect %s" % item.display_name.to_lower()
 		Action.PET:
 			return "Pet"
 	return ""
@@ -106,7 +94,7 @@ func feed() -> bool:
 	if data == null or fed_today or not Inventory.remove(data.feed_item, 1):
 		return false
 	fed_today = true
-	add_mood(MOOD_FED)
+	add_mood(Balance.ANIMAL_MOOD_FED)
 	_emote.pop(Emote.HEART)
 	_changed()
 	return true
@@ -127,7 +115,7 @@ func pet() -> bool:
 	if data == null or petted_today:
 		return false
 	petted_today = true
-	add_mood(MOOD_PET)
+	add_mood(Balance.ANIMAL_MOOD_PET)
 	_emote.pop(Emote.HEART)
 	_changed()
 	return true
@@ -135,23 +123,23 @@ func pet() -> bool:
 
 ## Change mood, clamped to 0..100.
 func add_mood(delta: int) -> void:
-	mood = clampi(mood + delta, 0, MOOD_MAX)
+	mood = clampi(mood + delta, 0, Balance.ANIMAL_MOOD_MAX)
 
 
 ## Fed days one product takes at the current mood.
 func days_needed() -> int:
-	return data.product_days + (1 if mood < LOW_MOOD else 0)
+	return data.product_days + (1 if mood < Balance.ANIMAL_MOOD_LOW else 0)
 
 
 ## Resolve a finished day (connected to GameClock.day_ending). Grazing (outside
-## FEED_SEASONS) or hand feeding counts as fed; fed days advance the product, an unfed
+## feed_seasons) or hand feeding counts as fed; fed days advance the product, an unfed
 ## winter day only costs mood.
 func end_day(day: int = -1) -> void:
 	if data == null:
 		return
-	var grazed := Calendar.season(day) not in FEED_SEASONS
+	var grazed := Calendar.season(day) not in data.feed_seasons
 	if not fed_today:
-		add_mood(MOOD_GRAZED if grazed else MOOD_UNFED)
+		add_mood(Balance.ANIMAL_MOOD_GRAZED if grazed else Balance.ANIMAL_MOOD_UNFED)
 	if (fed_today or grazed) and not product_ready:
 		progress_days += 1
 		if progress_days >= days_needed():
@@ -183,7 +171,7 @@ func to_dict() -> Dictionary:
 
 ## Restore from `to_dict()` (the id is applied separately via `setup`).
 func from_dict(d: Dictionary) -> void:
-	mood = clampi(int(d.get("mood", MOOD_START)), 0, MOOD_MAX)
+	mood = clampi(int(d.get("mood", Balance.ANIMAL_MOOD_START)), 0, Balance.ANIMAL_MOOD_MAX)
 	progress_days = int(d.get("progress", 0))
 	product_ready = bool(d.get("ready", false))
 	fed_today = bool(d.get("fed", false))

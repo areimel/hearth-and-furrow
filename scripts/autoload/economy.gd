@@ -49,11 +49,6 @@ func price_of(id: StringName) -> int:
 	return 0
 
 
-## What a shop charges for one.
-func buy_price(id: StringName) -> int:
-	return price_of(id)
-
-
 ## What a shop pays for one (base price x market-day bonus), rounded.
 func sell_price(id: StringName) -> int:
 	return roundi(price_of(id) * sell_multiplier())
@@ -63,21 +58,6 @@ func sell_price(id: StringName) -> int:
 ## supply modifiers (v1) belong here too.
 func sell_multiplier() -> float:
 	return Balance.MARKET_DAY_SELL_BONUS if Calendar.is_market_day() else 1.0
-
-
-## Buys `amount` of an item into the Inventory. False and no change if the item is not
-## priced, the purse is short, or it will not fit. (Animals: use spend() + Livestock.)
-func buy(id: StringName, amount: int = 1) -> bool:
-	var cost := buy_price(id) * amount
-	if amount <= 0 or not Content.has_item(id) or buy_price(id) <= 0:
-		return false
-	if not can_afford(cost) or not Inventory.can_add(id, amount):
-		return false
-	spend(cost)
-	Inventory.add(id, amount)
-	Progress.record(&"bought", id, amount)
-	item_bought.emit(id, amount, cost)
-	return true
 
 
 # ---------------------------------------------------------------- shops

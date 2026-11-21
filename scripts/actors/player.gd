@@ -166,17 +166,21 @@ func _move() -> void:
 
 
 func _animate() -> void:
-	var tree: AnimationTree = $Animation/AnimationTree
 	if direction:
 		_move_state_machine.travel("walk")
-		animation_direction = Vector2(round(direction.x), round(direction.y))
-		tree.set("parameters/StateMachine/idle/blend_position", animation_direction)
-		tree.set("parameters/StateMachine/walk/blend_position", animation_direction)
-		tree.set("parameters/FishIdleBlendSpace2D/blend_position", animation_direction)
-		for animation: StringName in PlayerActions.ANIMATIONS.values():
-			tree.set("parameters/ToolStateMachine/%s/blend_position" % animation, animation_direction)
+		face(Vector2(round(direction.x), round(direction.y)))
 	else:
 		_move_state_machine.travel("idle")
+
+
+## Turn to `dir` the way walking does: the target direction plus every animation blend position.
+func face(dir: Vector2) -> void:
+	animation_direction = dir
+	var tree: AnimationTree = $Animation/AnimationTree
+	for path: String in ["StateMachine/idle", "StateMachine/walk", "FishIdleBlendSpace2D"]:
+		tree.set("parameters/%s/blend_position" % path, dir)
+	for animation: StringName in PlayerActions.ANIMATIONS.values():
+		tree.set("parameters/ToolStateMachine/%s/blend_position" % animation, dir)
 
 
 # ---------------------------------------------------------------- animation and fishing signals

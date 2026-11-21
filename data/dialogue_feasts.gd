@@ -1,7 +1,6 @@
 extends RefCounted
 ## Feast dialogue, keyed by festival id (rows in data/festivals.gd). Pools:
 ##   host           npc id who speaks for the village (reminder, closing)
-##   opt_greet      dialogue option every gathered villager offers during the feast
 ##   greet          {npc id: [lines]} what each says to it (one line is picked per day)
 ##   thanks         lines a villager at the table says when something is contributed
 ##   opt_eve, eve   the host's option and lines the day before
@@ -11,7 +10,6 @@ extends RefCounted
 const LINES: Dictionary = {
 	&"may_day": {
 		"host": &"reeve",
-		"opt_greet": "A merry May to you!",
 		"greet": {
 			&"reeve": ["God give you a merry May! We have chosen our lord and lady. Mind you dance.",
 				"The pole went up at dawn. Straight as a die, and no one fell off it this year."],
@@ -37,7 +35,6 @@ const LINES: Dictionary = {
 	},
 	&"harvest_home": {
 		"host": &"reeve",
-		"opt_greet": "A good harvest home!",
 		"greet": {
 			&"reeve": ["The last load is in. Eat, drink, and thank God for it.",
 				"A fair harvest, and every sheaf counted. Sit, eat."],
