@@ -4,9 +4,7 @@
 [ext_resource type="Script" uid="uid://8vpund5t01cr" path="res://scripts/world/level.gd" id="1_urvlt"]
 [ext_resource type="Script" path="res://scripts/world/farm_grid.gd" id="farm_grid_script"]
 [ext_resource type="Script" path="res://scripts/world/crop_field.gd" id="crop_field_script"]
-[ext_resource type="PackedScene" path="res://scenes/ui/debug_hud.tscn" id="debug_hud_scene"]
-[ext_resource type="PackedScene" path="res://scenes/ui/kit/toasts.tscn" id="toasts_scene"]
-[ext_resource type="PackedScene" path="res://scenes/ui/kit/prompt.tscn" id="prompt_scene"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="debug_hud_scene"]
 [ext_resource type="Script" path="res://scripts/world/sky.gd" id="sky_script"]
 [ext_resource type="Script" path="res://scripts/world/day_cycle.gd" id="day_cycle_script"]
 [ext_resource type="PackedScene" uid="uid://b0mnopqlx5dix" path="res://scenes/characters/player.tscn" id="2_b2cq8"]
@@ -34,6 +32,7 @@
 
 [ext_resource type="PackedScene" path="res://scenes/ui/build_menu.tscn" id="wired_buildmenu"]
 [ext_resource type="PackedScene" path="res://scenes/world/risk_system.tscn" id="wired_risksystem"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menu.tscn" id="wired_gamemenu"]
 
 [sub_resource type="Gradient" id="Gradient_rmjfq"]
 offsets = PackedFloat32Array(0, 0.21830986, 0.42488262, 1)
@@ -2774,7 +2773,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="DebugHud" parent="Overlay/CanvasLayer/HUD" unique_id=1730416310 instance=ExtResource("debug_hud_scene")]
+[node name="GameHud" parent="Overlay/CanvasLayer/HUD" unique_id=1730416310 instance=ExtResource("debug_hud_scene")]
 
 [node name="TargetInfo" type="Label" parent="Overlay/CanvasLayer/HUD" unique_id=1730416311]
 visible = false
@@ -2792,12 +2791,6 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_type_variation = &"HudLabel"
 horizontal_alignment = 1
-
-[node name="Toasts" parent="Overlay/CanvasLayer/HUD" unique_id=1730416312 instance=ExtResource("toasts_scene")]
-layout_mode = 1
-
-[node name="Prompt" parent="Overlay/CanvasLayer/HUD" unique_id=1730416313 instance=ExtResource("prompt_scene")]
-layout_mode = 1
 
 [node name="Menus" type="Control" parent="Overlay/CanvasLayer" unique_id=905137642]
 layout_mode = 3
@@ -2851,7 +2844,7 @@ autoplay = true
 
 [node name="BuildMode" type="Node" parent="." node_paths=PackedStringArray("prompt", "workstations")]
 script = ExtResource("build_mode_script")
-prompt = NodePath("../Overlay/CanvasLayer/HUD/Prompt")
+prompt = NodePath("../Overlay/CanvasLayer/HUD/GameHud/Shown/Prompt")
 workstations = NodePath("../Workstations")
 
 [node name="Villagers" parent="." instance=ExtResource("wired_villagers")]
@@ -2871,6 +2864,8 @@ workstations = NodePath("../Workstations")
 [node name="BuildMenu" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_buildmenu")]
 
 [node name="RiskSystem" parent="." instance=ExtResource("wired_risksystem")]
+
+[node name="GameMenu" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_gamemenu")]
 
 [connection signal="do_action" from="Objects/Player" to="." method="_on_player_do_action"]
 [connection signal="tool_use" from="Objects/Player" to="." method="_on_player_tool_use"]

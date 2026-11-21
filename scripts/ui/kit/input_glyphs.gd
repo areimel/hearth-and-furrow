@@ -45,7 +45,7 @@ static func texture_for(action: StringName) -> Texture2D:
 
 ## Icon for a fixed key / gamepad button pair that has no input action (e.g. X to split).
 static func texture_for_keys(key: Key, button: JoyButton) -> Texture2D:
-	var pad: bool = Data.ControllerConnected
+	var pad := controller_connected
 	var path := _INPUT_DIR + ("Gamepad/%s.png" % _PAD_FILES.get(button, "") if pad
 			else "Keyboard/Key%s.png" % OS.get_keycode_string(key))
 	return load(path) if ResourceLoader.exists(path) else null

@@ -14,7 +14,7 @@ const PREVIEW_TINT := Color(1, 1, 1, 0.59)
 @onready var sky: WorldSky = $Sky
 @onready var build_mode: BuildMode = $BuildMode
 @onready var _preview: Sprite2D = $Overlay/PreviewMachineSprite2D
-@onready var _prompt: Prompt = $Overlay/CanvasLayer/HUD/Prompt
+@onready var _prompt: Prompt = $Overlay/CanvasLayer/HUD/GameHud/Shown/Prompt
 @onready var _target_info: Label = $Overlay/CanvasLayer/HUD/TargetInfo
 
 
@@ -32,6 +32,13 @@ func _on_joy_connection_changed(_device_id: int, connected: bool) -> void:
 
 func _exit_tree() -> void:
 	GameClock.stop()
+
+
+## Opens the pause menu. Open screens close themselves on `menu` / `ui_cancel`.
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"menu") and not UIScreen.any_open(get_tree()) and not day_cycle.busy:
+		get_viewport().set_input_as_handled()
+		($Overlay/CanvasLayer/Menus/GameMenu as GameMenu).toggle()
 
 
 func _process(_delta: float) -> void:
