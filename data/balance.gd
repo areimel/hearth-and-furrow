@@ -78,3 +78,52 @@ const START_LOADOUT: Array = [
 	[&"wheat_seed", 10],
 	[&"cabbage_seed", 5],
 ]
+
+# --- Weather rules ---
+## No storm before this day index; storms never fall on consecutive days.
+const STORM_FREE_DAYS: int = 3
+## A wet spell is rain/storm on at least WET_SPELL_DAYS of the last WET_SPELL_WINDOW days (today included).
+const WET_SPELL_WINDOW: int = 4
+const WET_SPELL_DAYS: int = 3
+## Days shown by Weather.outlook() by default.
+const OUTLOOK_DAYS: int = 3
+
+# --- Sky palette (multiplied into the day/night tint; kept subtle so the art stays readable) ---
+const SEASON_TINTS: Dictionary = {
+	G.Season.SPRING: Color(0.95, 1.0, 0.95),
+	G.Season.SUMMER: Color(1.0, 0.97, 0.86),
+	G.Season.AUTUMN: Color(1.0, 0.89, 0.76),
+	G.Season.WINTER: Color(0.86, 0.91, 1.0),
+}
+## Per-second easing speed when the season or weather tint changes.
+const TINT_EASE_SPEED: float = 1.2
+## Overcast colour of a storm, blended in with weight STORM_DIM.
+const STORM_COLOR: Color = Color(0.4, 0.42, 0.52)
+const STORM_DIM: float = 0.75
+## Lightning: seconds between flashes, flash strength (blend to white) and decay per second.
+const LIGHTNING_GAP_MIN: float = 6.0
+const LIGHTNING_GAP_MAX: float = 16.0
+const LIGHTNING_STRENGTH: float = 0.5
+const LIGHTNING_DECAY: float = 3.5
+## Rain direction (x, y) and speed multiplier for calm rain and for storms.
+const RAIN_DIRECTION: Vector3 = Vector3(-1.0, 1.0, 0.0)
+const STORM_RAIN_DIRECTION: Vector3 = Vector3(-2.4, 1.0, 0.0)
+const STORM_RAIN_SPEED: float = 1.35
+## Crop sway amplitude in pixels (quantised to whole pixels by the shader) and speed.
+const SWAY_CALM: float = 0.7
+const SWAY_STORM: float = 1.8
+const SWAY_SPEED: float = 2.0
+
+# --- Crop risk tuning ---
+## No storm damage or blight before this day index (the first week is risk-free).
+const RISK_FREE_DAYS: int = 7
+## Chance per morning that an eligible crop shows blight spots (during a wet spell, same crop as last time).
+const BLIGHT_DAILY_CHANCE: float = 0.12
+## Spotted plus blighted crops never exceed this share of the blight-sensitive crops (rounded down).
+const BLIGHT_MAX_SHARE: float = 0.3
+## A storm flattens between this share of STORM_MAX_LOSS and all of it (rounded down).
+const STORM_LOSS_ROLL_MIN: float = 0.5
+## Crops lost in this many days count as a "bad week" (RiskSystem.recent_losses()).
+const LOSS_MEMORY_DAYS: int = 7
+## Crop ids remembered per cell for rotation.
+const ROTATION_MEMORY: int = 2
