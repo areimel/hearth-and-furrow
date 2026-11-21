@@ -67,7 +67,7 @@ and lists it in `pending_placeholders()`. Any other missing path is a `validate(
 - `recipe(id)`, `recipes()`, `recipes_for_station(id)`, `recipes_producing(item)`, `recipes_using(item)`
 - `station(id)`, `stations()`, `animal(id)`, `has_animal(id)`, `animals()`, `npc(id)`, `npcs()`
 - `quest(id)`, `quests()`, `festival(id)`, `festivals()`, `festival_on(season, day)` (null quietly)
-- `validate() -> Array[String]`, `pending_placeholders()`, `chains()`, `placeholder_texture()`
+- `validate() -> Array[String]`, `pending_placeholders()`, `chains()`
 
 **SaveManager** — `SAVE_VERSION`, `save_path` (default `user://save_1.json`), `autosave_enabled` (false).
 - `register(key, provider)`, `unregister(key)`, `is_registered(key)`
@@ -304,3 +304,26 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   only the highest tier reached pays, and only if the player came (table, greeting or gift).
 - **FestivalScreen** (`scenes/ui/festival_screen.tscn`, group `FestivalScreen`): opened by
   the feast table; instanced under `Menus` on demand if the HUD has none.
+
+## Cleanup, balance and input (data/balance pass)
+- **Moves:** `ShopDeals` now lives in `scripts/autoload/shop_deals.gd` and `GameSession` in
+  `scripts/autoload/game_session.gd` (class names and autoload names unchanged). Content
+  tables are built by `ContentBuilder.build_all()` (quest/festival rows in
+  `content_story_rows.gd`); `Content.has_gatherable(id)` added, `placeholder_texture()` removed.
+- **Animal care is data:** `AnimalData.collect_verb` ("" = "Collect <item>") and
+  `feed_seasons: Array[int]` (rows `verb`, `feed_seasons` in `data/animals.gd`); mood numbers are
+  `Balance.ANIMAL_MOOD_{MAX,START,LOW,FED,GRAZED,PET,UNFED}`; the new-game herd is
+  `Balance.STARTER_HERD` ({animal id: count}).
+- **Economy:** `Economy.shop_sell_quote(shop, item_id, amount)` and `Economy.unit_demand(n)`.
+  Selling more than `Balance.DEMAND_FULL_PRICE_UNITS` of one item in a day pays `DEMAND_STEP`
+  less per extra unit (floor `DEMAND_FLOOR`); `shop_sell_price` is the price of the *next* unit,
+  `shop_sell` pays the quoted total. Save section `economy` gains `demand_today`. The generic
+  `Economy.sell` is gone; `Economy.buy` stays only for tests (use `shop_buy`). The shepherd now
+  sells winter feed (`item:straw`, `item:grain`).
+- **Input map** (Xbox naming, all events device -1): left stick + d-pad = `left/right/up/down`
+  and `ui_*`; A = `action`/`ui_accept`; B = `ui_cancel`; X = `highlighter`; Y = `build`;
+  LB/RB = `tool_backward`/`tool_forward`; Start = `menu`; Back = unbound; `day_change` is
+  keyboard-only; `diagnose` is removed. Guarded by `tests/test_input_map.gd`.
+- **Balance targets** are written at the top of `data/balance.gd` and enforced by
+  `tests/test_balance.gd` (chain multipliers, crop parity, winter/Spring-1 safety) and
+  `tools/year_sim.gd` (purse bands, driven by `tools/sim_farmer.gd`).

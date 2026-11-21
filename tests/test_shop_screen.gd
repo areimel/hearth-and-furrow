@@ -50,7 +50,8 @@ func test_buy_and_sell_through_the_screen() -> void:
 	var seeds := Inventory.count(&"barley_seed")
 	screen._on_ware_selected(&"item:barley_seed")
 	eq(Inventory.count(&"barley_seed"), seeds + 1, "bought a seed")
-	eq(Economy.coins, Balance.START_COINS - 5, "paid")
+	var seed_price := Economy.price_of(&"barley_seed")
+	eq(Economy.coins, Balance.START_COINS - seed_price, "paid")
 	Inventory.add(&"cheese", 3)
 	var slot := -1
 	for i in Inventory.size():
@@ -58,11 +59,11 @@ func test_buy_and_sell_through_the_screen() -> void:
 			slot = i
 	screen._on_slot_activated(slot)
 	eq(Inventory.count(&"cheese"), 2, "sold one")
-	eq(Economy.coins, Balance.START_COINS - 5 + 90, "chandler paid base")
+	eq(Economy.coins, Balance.START_COINS - seed_price + Economy.price_of(&"cheese"), "chandler paid base")
 	screen._on_slot_activated(0)  # the hoe: not bought
 	eq(Inventory.count(&"hoe_wooden"), 1, "tool kept")
 	screen._show_sale(slot)
-	check(screen._sell_detail._facts.text.contains("Pays 90"), "detail shows the price")
+	check(screen._sell_detail._facts.text.contains("Pays %d" % Economy.price_of(&"cheese")), "detail shows the price")
 	screen._show_sale(0)
 	eq(screen._sell_detail._note.text, "Won't buy that", "detail refuses a tool")
 	screen.close()
@@ -70,12 +71,13 @@ func test_buy_and_sell_through_the_screen() -> void:
 
 
 func test_unaffordable_ware_is_greyed_with_reason() -> void:
-	Economy.coins = 3
+	var price := Economy.price_of(&"wheat_seed")
+	Economy.coins = price - 1
 	var screen := _screen()
 	await tree.process_frame
 	screen.open_for(&"chandler")
 	screen._show_ware(&"item:wheat_seed")
-	eq(screen._buy_detail._note.text, "Need 5 coins", "reason shown")
+	eq(screen._buy_detail._note.text, "Need %d coins" % price, "reason shown")
 	check(screen._menu.entry_button(0).has_theme_color_override("font_color"), "greyed")
 	screen.close()
 	screen.free()
