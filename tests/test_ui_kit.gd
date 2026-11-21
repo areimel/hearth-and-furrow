@@ -55,10 +55,10 @@ func test_toast_is_noop_without_node_and_pushes_with_one() -> void:
 
 
 func test_glyphs_resolve_for_known_and_generic_actions() -> void:
-	Data.ControllerConnected = false
+	InputGlyphs.controller_connected = false
 	check(InputGlyphs.texture_for(&"action") != null, "action glyph")
 	check(InputGlyphs.texture_for(&"menu") != null, "menu keyboard glyph")
-	Data.ControllerConnected = true
+	InputGlyphs.controller_connected = true
 	check(InputGlyphs.texture_for(&"menu") != null, "menu gamepad glyph")
-	Data.ControllerConnected = false
+	InputGlyphs.controller_connected = false
 	check(InputGlyphs.texture_for(&"no_such_action") == null, "unknown action gives null")

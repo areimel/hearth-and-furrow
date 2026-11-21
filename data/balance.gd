@@ -2,6 +2,13 @@ extends RefCounted
 ## Global tuning numbers. Const-only. Per-item / per-crop numbers live on their own rows,
 ## not here. Access as `Balance.X` after `const Balance := preload("res://data/balance.gd")`.
 
+# --- World ---
+const TILE_SIZE: int = 16
+## Player walk speed in pixels per second.
+const PLAYER_SPEED: float = 70.0
+## Swings of an axe before an apple tree is felled.
+const APPLE_TREE_HEALTH: int = 4
+
 # --- Inventory ---
 const HOTBAR_SLOTS: int = 10
 const BACKPACK_SLOTS: int = 24
@@ -33,6 +40,12 @@ const WEATHER_WEIGHTS: Dictionary = {
 # --- Crop risks ---
 ## Each weed on a crop tile removes this fraction of yield (yield never below 1).
 const WEED_YIELD_PENALTY: float = 0.25
+## A crop never carries more weeds than this.
+const MAX_WEEDS: int = 3
+## Chance per evening that an unripe crop gains a weed.
+const WEED_DAILY_CHANCE: float = 0.15
+## Item a storm-flattened crop gives when salvaged (1 unit).
+const FLATTENED_SALVAGE_ITEM: StringName = &"straw"
 ## Upper bound on the share of storm-sensitive ripe crops a storm may flatten.
 const STORM_MAX_LOSS: float = 0.4
 ## Blighted crops still yield this fraction (rounded up).

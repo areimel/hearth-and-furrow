@@ -1,8 +1,10 @@
 class_name FarmGrid extends Node
 ## Owns everything about the tile grid: terrain queries, tilled/wet soil,
-## cell occupancy (crops and placeables) and the target highlight.
-## Cells are Vector2i grid coordinates, cell = floor(world_pos / Data.TILE_SIZE).
+## cell occupancy (crops and placeables), the crop field and the target highlight.
+## Cells are Vector2i grid coordinates, cell = floor(world_pos / Balance.TILE_SIZE).
 ## `is_tool_valid` is the single authority on whether a tool works on a cell.
+
+const Balance := preload("res://data/balance.gd")
 
 const HIGHLIGHT_GREEN := Vector2i(12, 1)
 const HIGHLIGHT_RED := Vector2i(1, 1)
@@ -15,12 +17,14 @@ const WET_VARIANTS := 3
 @export var wet_layer: TileMapLayer  ## Watered cells, cleared by dry_all().
 @export var target_layer: TileMapLayer  ## Green/red highlight.
 @export var house: Node2D  ## Needs is_point_inside_house(cell: Vector2).
+@export var crop_field: CropField  ## Owns the planted crops; resolved each evening.
 
 var _occupants: Dictionary = {}  # Vector2i -> Node (untyped: entries may be freed)
 var _last_dir: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
+	SaveManager.register(&"farm", self)
 	GameClock.day_ending.connect(_on_day_ending)
 	GameClock.day_passed.connect(_on_day_passed)
 
@@ -29,7 +33,7 @@ func _ready() -> void:
 
 ## Grid cell containing a world position.
 func cell_of(world_pos: Vector2) -> Vector2i:
-	return Vector2i(floori(world_pos.x / Data.TILE_SIZE), floori(world_pos.y / Data.TILE_SIZE))
+	return Vector2i(floori(world_pos.x / Balance.TILE_SIZE), floori(world_pos.y / Balance.TILE_SIZE))
 
 
 ## Cell in front of `pos` in direction `dir`. A zero `dir` reuses the last non-zero one.
@@ -141,8 +145,7 @@ func is_object_near_cell(cell: Vector2i) -> bool:
 
 ## Evening: crops resolve against today's wet state, THEN the watering clears.
 func _on_day_ending(_day: int) -> void:
-	for plant: StaticBody2D in get_tree().get_nodes_in_group("Plants"):
-		plant.grow(is_wet(plant.coord))
+	crop_field.resolve_day()
 	dry_all()
 
 
@@ -154,32 +157,38 @@ func _on_day_passed(_day: int) -> void:
 
 # ---------------------------------------------------------------- tools
 
-## Single authority on whether `tool` can be used on `cell`.
-func is_tool_valid(tool: Enum.Tool, cell: Vector2i) -> bool:
+## Single authority on whether `action` (a G.ToolKind, or PlayerActions.SOW) can be used
+## on `cell`. Sowing only checks the soil; Level checks the seed.
+func is_tool_valid(action: int, cell: Vector2i) -> bool:
 	if _in_house(cell) or ground_layer.get_cell_tile_data(cell) == null:
 		return false
-	match tool:
-		Enum.Tool.HOE:
+	var crop := crop_field.crop_at(cell)
+	match action:
+		G.ToolKind.HOE:
+			if crop != null:
+				return crop.weeds > 0
 			return is_farmable(cell) and not is_water(cell) and not is_object_near_cell(cell)
-		Enum.Tool.WATER:
+		G.ToolKind.WATERING_CAN:
 			return is_tilled(cell)
-		Enum.Tool.FISH:
+		G.ToolKind.FISHING_ROD:
 			return is_water(cell)
-		Enum.Tool.SEED:
+		PlayerActions.SOW:
 			return is_tilled(cell) and not is_occupied(cell)
-		Enum.Tool.AXE, Enum.Tool.SWORD:
+		G.ToolKind.SICKLE:
+			return crop != null and crop.is_ripe()
+		G.ToolKind.AXE:
 			return true
 	return false
 
 
 ## Draw the green/red highlight for the cell targeted by a player at `pos` facing `dir`.
-func update_highlight(pos: Vector2, dir: Vector2, tool: Enum.Tool) -> void:
+func update_highlight(pos: Vector2, dir: Vector2, action: int) -> void:
 	if dir == Vector2.ZERO and _last_dir == Vector2.ZERO:
 		target_layer.clear()
 		return
 	var cell := get_target_grid(pos, dir)
 	target_layer.clear()
-	target_layer.set_cell(cell, 0, HIGHLIGHT_GREEN if is_tool_valid(tool, cell) else HIGHLIGHT_RED)
+	target_layer.set_cell(cell, 0, HIGHLIGHT_GREEN if is_tool_valid(action, cell) else HIGHLIGHT_RED)
 
 
 func clear_highlight() -> void:
@@ -188,12 +197,13 @@ func clear_highlight() -> void:
 
 # ---------------------------------------------------------------- save data
 
-## Serialise tilled and wet cells as arrays of [x, y].
+## The `farm` save section: tilled and wet cells as [x, y] pairs, plus every crop.
 func to_dict() -> Dictionary:
-	return {"tilled": _cells_to_pairs(tilled_cells()), "wet": _cells_to_pairs(wet_cells())}
+	return {"tilled": _cells_to_pairs(tilled_cells()), "wet": _cells_to_pairs(wet_cells()),
+			"crops": crop_field.to_dict()}
 
 
-## Restore tilled and wet cells from to_dict() output (replaces current soil).
+## Restore from to_dict() output (replaces soil and crops). Accepts `{}`.
 func from_dict(data: Dictionary) -> void:
 	soil_layer.clear()
 	wet_layer.clear()
@@ -202,6 +212,17 @@ func from_dict(data: Dictionary) -> void:
 		soil_layer.set_cells_terrain_connect(tilled, SOIL_TERRAIN_SET, SOIL_TERRAIN)
 	for cell in _pairs_to_cells(data.get("wet", [])):
 		water(cell)
+	crop_field.from_dict(data.get("crops", []))
+
+
+## New game: bare soil and no crops.
+func reset() -> void:
+	from_dict({})
+
+
+func _exit_tree() -> void:
+	if SaveManager.is_registered(&"farm"):
+		SaveManager.unregister(&"farm")
 
 
 func _in_house(cell: Vector2i) -> bool:

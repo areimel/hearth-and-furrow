@@ -1,31 +1,32 @@
 class_name Level extends Node2D
 ## World root and mediator. The player only emits signals; Level translates them
-## into FarmGrid calls, owns the day transition and rain, and exposes the
+## into FarmGrid calls, owns the build-placement entry points, and exposes the
 ## containers other systems spawn into. Find it with
 ## get_tree().get_first_node_in_group("Level").
 
-signal update_hint_ui_keys
-
-var _build_cell: Vector2i
-
-const PLANT_SCENE := preload("res://scenes/objects/plant.tscn")
-const PLANT_INFO_SCENE := preload("res://scenes/ui/plant_info.tscn")
+const Balance := preload("res://data/balance.gd")
+const REACH: float = 22.0  ## How far an axe swing reaches, in pixels.
 
 @onready var farm_grid: FarmGrid = $FarmGrid
-@onready var player: CharacterBody2D = $Objects/Player
+@onready var player: Player = $Objects/Player
 @onready var day_cycle: DayCycle = $DayCycle
 @onready var sky: WorldSky = $Sky
 @onready var _preview: Sprite2D = $Overlay/PreviewMachineSprite2D
-@onready var _plant_info_control: Control = $Overlay/CanvasLayer/PlantInfoControl
+@onready var _prompt: Prompt = $Overlay/CanvasLayer/HUD/Prompt
+@onready var _target_info: Label = $Overlay/CanvasLayer/HUD/TargetInfo
 
 
 func _ready() -> void:
 	add_to_group("Level")
 	GameClock.day_passed.connect(_on_day_passed)
 	GameClock.start()
+	player.interact_focus_changed.connect(_on_interact_focus_changed)
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
-	if Input.get_connected_joypads().size() > 0:
-		Data.ControllerConnected = true
+	InputGlyphs.controller_connected = Input.get_connected_joypads().size() > 0
+
+
+func _on_joy_connection_changed(_device_id: int, connected: bool) -> void:
+	InputGlyphs.controller_connected = connected
 
 
 func _exit_tree() -> void:
@@ -34,17 +35,10 @@ func _exit_tree() -> void:
 
 func _process(_delta: float) -> void:
 	GameClock.set_paused(UIScreen.any_open(get_tree()) or day_cycle.busy)
-
-	if Data.TARGET_HIGHLIGHTER:
-		farm_grid.update_highlight(player.position, player.animation_direction, player.current_tool)
-	else:
-		farm_grid.clear_highlight()
-
-	_preview.visible = player.current_state == Enum.State.BUILDING
-	if player.animation_direction != Vector2.ZERO:
-		_build_cell = farm_grid.get_target_grid(player.position, player.animation_direction)
-		_preview.position = (Vector2i(_build_cell * Data.TILE_SIZE)
-				+ Data.MACHINE_PREVIEW_TEXTURES[player.current_machine]["offset"])
+	_update_target_readout()
+	if _preview.visible:
+		_preview.position = Vector2(target_cell() * Balance.TILE_SIZE) \
+				+ (Vector2(Balance.TILE_SIZE, Balance.TILE_SIZE) - _preview.texture.get_size()) / 2.0
 
 
 # ---------------------------------------------------------------- accessors
@@ -69,6 +63,11 @@ func gatherables() -> Node2D:
 	return $Objects/Gatherables
 
 
+## The grid cell in front of the player.
+func target_cell() -> Vector2i:
+	return farm_grid.get_target_grid(player.position, player.animation_direction)
+
+
 # ---------------------------------------------------------------- day cycle
 
 func _on_day_passed(_day: int) -> void:
@@ -80,81 +79,110 @@ func _on_day_passed(_day: int) -> void:
 
 # ---------------------------------------------------------------- player actions
 
-## Fire the tool animation only if the tool is valid on the targeted cell.
-func _on_player_do_action(anim_tree: AnimationTree, property: StringName, tool: int, pos: Vector2, dir: Vector2) -> void:
-	if farm_grid.is_tool_valid(tool, farm_grid.get_target_grid(pos, dir)):
+## Fire the tool animation only if the action is valid on the targeted cell.
+func _on_player_do_action(anim_tree: AnimationTree, property: StringName, action: int, pos: Vector2, dir: Vector2) -> void:
+	if action == PlayerActions.SOW and player.action_item == null:
+		return
+	if farm_grid.is_tool_valid(action, farm_grid.get_target_grid(pos, dir)):
 		anim_tree.set(property, AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 
 
-func _on_player_tool_use(tool: Enum.Tool, pos: Vector2, dir: Vector2) -> void:
+func _on_player_tool_use(action: int, pos: Vector2, dir: Vector2) -> void:
 	var cell := farm_grid.get_target_grid(pos, dir)
 	if farm_grid.occupant(cell) is Placeable:
 		return
-	match tool:
-		Enum.Tool.HOE:
-			farm_grid.till(cell)
-			if Weather.is_raining():
-				farm_grid.water(cell)
-		Enum.Tool.WATER:
+	match action:
+		G.ToolKind.HOE:
+			_hoe(cell)
+		G.ToolKind.WATERING_CAN:
 			farm_grid.water(cell)
-		Enum.Tool.FISH:
+		G.ToolKind.FISHING_ROD:
 			player.start_fishing()
-		Enum.Tool.SEED:
+		G.ToolKind.SICKLE:
+			farm_grid.crop_field.reap(cell)
+		G.ToolKind.AXE:
+			_swing(action, pos, dir, REACH)
+		PlayerActions.SOW:
 			_sow(cell)
-		Enum.Tool.AXE:
-			_swing(tool, pos, dir, 22.0)
 
 
-func _sow(cell: Vector2i) -> void:
-	var item: Enum.Item = Data.SEED_TO_ITEM[player.current_seed]
-	if Data.ITEMS_AMOUNT[item] <= 0:
+func _hoe(cell: Vector2i) -> void:
+	var crop := farm_grid.crop_field.crop_at(cell)
+	if crop:
+		crop.clear_weeds()
 		return
-	Data.ITEMS_AMOUNT[item] -= 1
-	var plant_res := PlantResource.new()
-	plant_res.setup(player.current_seed)
-	var plant_info: PanelContainer = PLANT_INFO_SCENE.instantiate()
-	plant_info.setup(plant_res)
-	_plant_info_control.add(plant_info)
-	var plant: StaticBody2D = PLANT_SCENE.instantiate()
-	plant.setup(cell, crops(), plant_res, plant_info, _on_plant_gone, _on_plant_gone)
-	farm_grid.occupy(cell, plant)
+	farm_grid.till(cell)
+	if Weather.is_raining():
+		farm_grid.water(cell)
+
+
+## Sow the crop of the seed the swing started with; consumes one seed.
+func _sow(cell: Vector2i) -> void:
+	var seed_item: ItemData = player.action_item
+	var crop_data := Content.crop_for_seed(seed_item.id) if seed_item else null
+	if crop_data == null or not farm_grid.is_tool_valid(PlayerActions.SOW, cell):
+		return
+	if Inventory.remove(seed_item.id, 1):
+		farm_grid.crop_field.sow(cell, crop_data.id)
 
 
 ## Call hit(tool, dir) on every Axe_able object within reach in front of the player.
-func _swing(tool: Enum.Tool, pos: Vector2, dir: Vector2, reach: float) -> void:
+func _swing(action: int, pos: Vector2, dir: Vector2, reach: float) -> void:
 	for object: Node2D in get_tree().get_nodes_in_group("Axe_able"):
 		var to_object := object.position - pos
 		# dot > 0 means in front, closer to 1 means more aligned
 		if to_object.length() < reach and dir.dot(to_object.normalized()) > 0.65:
-			object.hit(tool, dir)
+			object.hit(action, dir)
 
 
-func _on_plant_gone(cell: Vector2i) -> void:
-	farm_grid.release(cell)
+# ---------------------------------------------------------------- HUD feedback
 
-
-func _on_player_diagnose() -> void:
-	_plant_info_control.visible = not _plant_info_control.visible
-
-
-# ---------------------------------------------------------------- build mode
-
-func _on_player_build(curr_machine: int) -> void:
-	if curr_machine == Enum.Machine.DELETE:
-		var placed := farm_grid.occupant(_build_cell) as Placeable
-		if placed:
-			placed.remove()
+func _on_interact_focus_changed(target: Interactable) -> void:
+	if target == null:
+		_prompt.hide_prompt()
 		return
-	if not farm_grid.is_free_for_placement(_build_cell):
-		return
-	var placeable: Placeable = Data.MACHINE_SCENE[curr_machine]["scene"].instantiate()
-	placeable.setup(_build_cell, self, stations())
+	var text: Variant = target.get_meta(&"prompt_text", target.get_parent().get_meta(&"prompt_text", "Use"))
+	_prompt.show_prompt(&"action", str(text))
 
 
-func _on_player_change_machine(curr_machine: int) -> void:
-	_preview.texture = Data.MACHINE_PREVIEW_TEXTURES[curr_machine]["texture"]
+## With the highlighter on: tint the target cell and describe the crop standing on it.
+func _update_target_readout() -> void:
+	var crop: Crop = null
+	if player.highlighter_on:
+		var action := PlayerActions.for_item(Inventory.selected_item())
+		farm_grid.update_highlight(player.position, player.animation_direction, action)
+		crop = farm_grid.crop_field.crop_at(target_cell())
+	else:
+		farm_grid.clear_highlight()
+	_target_info.visible = crop != null
+	if crop:
+		_target_info.text = crop.info_text()
 
 
-func _on_joy_connection_changed(_device_id: int, connected: bool) -> void:
-	update_hint_ui_keys.emit()
-	Data.ControllerConnected = connected
+# ---------------------------------------------------------------- build placement
+# Entry points for the build/placement system (stations, coops, ...): it picks a scene
+# from the inventory, shows a preview, and places at the cell in front of the player.
+
+## Whether a Placeable may be built on the cell in front of the player.
+func can_place_at_target() -> bool:
+	return farm_grid.is_free_for_placement(target_cell())
+
+
+## Instantiate `scene` (root must be a Placeable) on the target cell under stations().
+## Returns the new Placeable, or null when the cell is not free.
+func place_at_target(scene: PackedScene) -> Placeable:
+	if not can_place_at_target():
+		return null
+	var placeable: Placeable = scene.instantiate()
+	placeable.setup(target_cell(), self, stations())
+	return placeable
+
+
+## Show a half-transparent `texture` on the target cell until hide_placement_preview().
+func show_placement_preview(texture: Texture2D) -> void:
+	_preview.texture = texture
+	_preview.visible = true
+
+
+func hide_placement_preview() -> void:
+	_preview.visible = false

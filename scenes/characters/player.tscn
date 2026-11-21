@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://dbmbhotl3mjb4" path="res://scripts/characters/player.gd" id="2_76oj4"]
 [ext_resource type="Texture2D" uid="uid://0vko1ybpl45s" path="res://graphics/characters/main/main_straw.png" id="2_eojnx"]
-[ext_resource type="PackedScene" uid="uid://bwdt41l74cwc" path="res://scenes/ui/tool_ui.tscn" id="3_76oj4"]
 [ext_resource type="PackedScene" uid="uid://rqbm035hv21n" path="res://scenes/ui/fishing_game.tscn" id="4_dyp2m"]
 [ext_resource type="AudioStream" uid="uid://dvtigt760l6wc" path="res://audio/axe.wav" id="5_eojnx"]
 [ext_resource type="AudioStream" uid="uid://doray1iu4lcha" path="res://audio/fish.wav" id="6_qgnko"]
@@ -1583,8 +1582,6 @@ parameters/OneShot/internal_active = false
 parameters/OneShot/request = 0
 parameters/FishBlend/blend_amount = 0.0
 parameters/FishIdleBlendSpace2D/blend_position = Vector2(0, 0)
-
-[node name="ToolUI" parent="." unique_id=378385836 instance=ExtResource("3_76oj4")]
 
 [node name="FishingGame" parent="." unique_id=1161393087 instance=ExtResource("4_dyp2m")]
 visible = false

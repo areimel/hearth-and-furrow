@@ -8,6 +8,7 @@
 size = Vector2(16, 22)
 
 [node name="bed" type="StaticBody2D" unique_id=2076695548]
+metadata/prompt_text = "Sleep"
 scale = Vector2(1.25, 1.25)
 collision_layer = 4
 collision_mask = 2

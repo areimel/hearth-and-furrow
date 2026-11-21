@@ -4,6 +4,8 @@ class_name Placeable extends StaticBody2D
 ## `parent`, and register with the level's FarmGrid. Frees itself on remove()
 ## and releases its cell whenever it leaves the tree.
 
+const Balance := preload("res://data/balance.gd")
+
 var coord: Vector2i
 var grid: FarmGrid
 
@@ -13,7 +15,7 @@ var grid: FarmGrid
 func setup(grid_coord: Vector2i, level: Level, parent: Node) -> void:
 	coord = grid_coord
 	grid = level.farm_grid
-	position = Vector2(grid_coord * Data.TILE_SIZE)
+	position = Vector2(grid_coord * Balance.TILE_SIZE)
 	parent.add_child(self)
 	grid.occupy(coord, self)
 

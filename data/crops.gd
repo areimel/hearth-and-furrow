@@ -10,7 +10,7 @@ const AU := G.Season.AUTUMN
 const ROWS: Dictionary = {
 	&"wheat": {name = "Wheat", kind = G.CropKind.FIELD, seasons = [SP, SU, AU],
 		seed = &"wheat_seed", harvest = &"wheat_sheaf", amount = 2, days = 8,
-		storm = true, blight = true, sprite = "res://graphics/plants/wheat.png"},
+		storm = true, blight = true, sprite = "res://graphics/plants/wheat.png", frames = 4},
 	&"barley": {name = "Barley", kind = G.CropKind.FIELD, seasons = [SP, SU],
 		seed = &"barley_seed", harvest = &"barley", amount = 2, days = 7,
 		storm = true, blight = true, sprite = P.PLACEHOLDER + "crop_barley.png"},
