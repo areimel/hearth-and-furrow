@@ -113,6 +113,16 @@ and lists it in `pending_placeholders()`. Any other missing path is a `validate(
 - `price_of(id)` (item or animal row), `buy_price(id)`, `sell_price(id)`, `sell_multiplier()` ← market-day hook
 - `buy(id, n) -> bool` (coins → Inventory), `sell(id, n) -> int` coins earned (records `sold.<id>`)
 - signals `coins_changed(coins, delta)`, `item_bought(id, n, coins)`, `item_sold(id, n, coins)`
+- Shops (`data/shops.gd` → `ShopData`; `Content.shop(id)`, `Content.shops()`): wares are
+  `item` / `animal:<id>` / `tool_upgrade:<ToolKind>` / `station:<id>` (a kit of build materials),
+  with optional price, daily `stock`, `seasons`, `sowable`, `unlock`, `requires` (paid conversion).
+  Buy rules (`cats`/`tags`/`ids` + `factor`) say what the keeper pays for.
+  Ware ids default to `<kind>:<target>` (e.g. `item:wheat_seed`, `tool_upgrade:1`).
+- `shop_buy_price(shop, entry)`, `shop_sell_price(shop, item_id)` (base x factor x market-day),
+  `shop_stock_left(shop, entry)` (-1 unlimited), `shop_block_reason(shop, entry) -> String`,
+  `shop_buy(shop_id, entry_id) -> String` ("" = bought, else the refusal; all-or-nothing),
+  `shop_sell(shop_id, item_id, n) -> int`. Stock sold per day is saved under `economy`
+  (`sold_today`) and restocks in `GameClock.day_ending`. Goods logic lives in `ShopDeals`.
 
 **Relationships** (save key `relationships`) — points 0..1000, hearts = points/100.
 - `points(npc)`, `hearts(npc)`, `add_points(npc, n)`, `talk(npc) -> bool` (first today: +20)
