@@ -159,7 +159,7 @@ sack, max 36).
 - A `sequential` quest's conditions are steps done in order (finished steps latch, item conditions
   excepted); `auto` quests start on a new game; `perk` is a daily favour once complete.
 
-**Settings** (autoload name `Settings`, class `GameSettings`, file `scripts/autoload/settings.gd`):
+**Settings** (autoload name `Settings`, class `GameSettings`, file `scripts/autoload/game_settings.gd`):
 persisted to `user://settings.cfg`. Keys `text_size` ("normal"/"large"), `pause_in_menus`,
 `relaxed_time`, `master_volume`, `music_volume`, `sfx_volume`, `fullscreen`.
 - `get_value(key, fallback)`, `set_value(key, value)`, `load_file()`, `save()`, `apply_all()`,
@@ -241,7 +241,7 @@ optional `radius` adds nodes on a new game. Placement rules on the row: `any_gra
 **Gatherable** (`extends Placeable`): `Gatherable.create(id)`, `gather() -> bool`, `is_ripe()`,
 `roll_yields()`, `prompt_text()`; regrows after `regrow` days; a row's optional `tool` gates it.
 
-**Trees and tools**: `AppleTree` (`tree.gd`; group `Axe_able`): `health felled stump_days`,
+**Trees and tools**: `AppleTree` (`apple_tree.gd`; group `Axe_able`): `health felled stump_days`,
 `hit(action, dir, tier)`, `fell(bonus_logs)`, `regrow()`, `apple_count()`, `pick_apples()`,
 `AppleTree.hits_to_fell(tier)`. Felling gives `Balance.TREE_LOGS + tier.bonus_logs` logs; apples are
 picked by hand and regrow in `Balance.APPLE_SEASONS`. `TreeGrove` is the one `trees` provider.
