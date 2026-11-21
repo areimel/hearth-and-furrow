@@ -14,7 +14,7 @@ const DEFAULT_PATH := "user://settings.cfg"
 const SECTION := "settings"
 ## Default theme font size per text_size value.
 const FONT_SIZES: Dictionary = {"normal": 9, "large": 12}
-const SMALL_FONT_SIZES: Dictionary = {"normal": 8, "large": 10}
+const SMALL_FONT_SIZES: Dictionary = {"normal": 9, "large": 12}
 ## Clock speed multiplier when relaxed_time is on.
 const RELAXED_SCALE := 0.6
 const DEFAULTS: Dictionary = {

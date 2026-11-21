@@ -7,7 +7,8 @@ extends SceneTree
 const THEME_PATH := "res://scenes/ui/game_theme.tres"
 const FONT_PATH := "res://graphics/fonts/PixeloidSans.ttf"
 const FONT_SIZE := 9
-const SMALL_FONT_SIZE := 8
+## Same as FONT_SIZE: Pixeloid is only crisp at its native 9px (8px blurs "o" into "a").
+const SMALL_FONT_SIZE := 9
 const THEME_UID := "uid://bv8t0obbc2n47"
 
 

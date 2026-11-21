@@ -1,6 +1,6 @@
 class_name ItemRow extends HBoxContainer
 ## A captioned row of small ItemSlots ("Needs", "Makes", "Costs"). With `check_have`
-## each slot shows have/need against the Inventory, dimmed and red when short.
+## each slot is followed by have/need against the Inventory, dimmed and red when short.
 ## Display only: the slots take no focus or mouse.
 
 ## Width reserved for the caption so several rows line up.
@@ -29,8 +29,10 @@ func show_items(items: Dictionary, check_have: bool = false) -> void:
 		slot.focus_mode = Control.FOCUS_NONE
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.set_item(id, need)
-		if check_have:
-			var have := Inventory.count(id)
-			slot.set_count_text("%d/%d" % [have, need], have < need)
-			slot.dimmed = have < need
 		add_child(slot)
+		if check_have:
+			# The tally sits beside the slot: over the icon it hid what the item was.
+			var have := Inventory.count(id)
+			slot.set_item(id, 1)
+			slot.dimmed = have < need
+			add_child(UIText.label("%d/%d" % [have, need], &"WarnLabel" if have < need else &"HintLabel"))

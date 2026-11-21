@@ -32,10 +32,15 @@ godot --path . res://tools/screenshot.tscn -- --out /tmp/shots --scene res://sce
 tools/wire_scene.py scenes/levels/level.tscn Name=res://scenes/world/x.tscn@.   # instance a scene without the editor
 ```
 
-- `screenshot.tscn` needs a display. The default scene is the title screen, so pass `--scene` for the
-  level. `--setup` takes comma-separated steps (`rain`, `storm`, `night`, `winter`, `plants`, `risks`,
-  `menu`, `days:N` ...; see the header of `tools/screenshot.gd`). It writes the raw 320x180 PNG and a
-  x4 copy; read the `_x4` file to look at it.
+- `screenshot.tscn` needs a display. With `--setup` it loads the level; without it, the title screen
+  (pass `--scene` to choose). `--setup` takes comma-separated steps: world state (`rain`, `storm`,
+  `night`, `winter`, `plants`, `risks`, `days:N`) and screens (`title`, `menu:<tab>`,
+  `crafting:<station>`, `shop:<shop>`, `shop_sell:<shop>`, `build`, `dialogue:<npc>`,
+  `festival:<id>`, `yard`, `herd`, `forage`, `village`). `--session` boots a real new game (throwaway
+  save); `--pos x,y --zoom z` move the camera. It writes the raw 320x180 PNG and a x4 copy; read the
+  `_x4` file. Steps live in `tools/screenshot_setups.gd`.
+- Fonts: Pixeloid is only crisp at its native 9px. Do not add smaller sizes (8px turned "Tool" into
+  "Taal"); distinguish secondary text with a theme variation's colour instead.
 - **`godot --check-only --script` does NOT work** for scripts that touch autoloads (they are skipped).
   Use `tools/check.sh`: its parse-check loads every script inside the running project.
 - Export presets exist (`Windows Desktop`, `Web`); exports go to the gitignored `exports/`.
