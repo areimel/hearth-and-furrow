@@ -5,18 +5,9 @@ extends Node
 
 const Builder := preload("res://scripts/autoload/content_builder.gd")
 const Validator := preload("res://scripts/autoload/content_validator.gd")
-const ItemsTools := preload("res://data/items_tools.gd")
-const ItemsGoods := preload("res://data/items_goods.gd")
-const Crops := preload("res://data/crops.gd")
 const Recipes := preload("res://data/recipes.gd")
-const Stations := preload("res://data/stations.gd")
-const Animals := preload("res://data/animals.gd")
 const Gatherables := preload("res://data/gatherables.gd")
-const Npcs :=preload("res://data/npcs.gd")
-const Quests := preload("res://data/quests.gd")
-const Festivals := preload("res://data/festivals.gd")
 const ToolTiers := preload("res://data/tool_tiers.gd")
-const Shops := preload("res://data/shops.gd")
 
 var _items: Dictionary[StringName, ItemData] = {}
 var _crops: Dictionary[StringName, CropData] = {}
@@ -50,10 +41,7 @@ func has_item(id: StringName) -> bool:
 
 
 func items() -> Array[ItemData]:
-	_ensure_built()
-	var out: Array[ItemData] = []
-	out.assign(_items.values())
-	return out
+	return _list(_items, ItemData)
 
 
 func items_with_tag(tag: StringName) -> Array[ItemData]:
@@ -85,10 +73,7 @@ func crop(id: StringName) -> CropData:
 
 
 func crops() -> Array[CropData]:
-	_ensure_built()
-	var out: Array[CropData] = []
-	out.assign(_crops.values())
-	return out
+	return _list(_crops, CropData)
 
 
 ## Crop sown by a seed item, or null (quietly) if the item is not a seed.
@@ -104,10 +89,7 @@ func recipe(id: StringName) -> RecipeData:
 
 
 func recipes() -> Array[RecipeData]:
-	_ensure_built()
-	var out: Array[RecipeData] = []
-	out.assign(_recipes.values())
-	return out
+	return _list(_recipes, RecipeData)
 
 
 func recipes_for_station(station_id: StringName) -> Array[RecipeData]:
@@ -133,10 +115,7 @@ func station(id: StringName) -> StationData:
 
 
 func stations() -> Array[StationData]:
-	_ensure_built()
-	var out: Array[StationData] = []
-	out.assign(_stations.values())
-	return out
+	return _list(_stations, StationData)
 
 
 # --- Animals, villagers, quests, festivals, tool tiers ---
@@ -151,19 +130,20 @@ func has_animal(id: StringName) -> bool:
 
 
 func animals() -> Array[AnimalData]:
-	_ensure_built()
-	var out: Array[AnimalData] = []
-	out.assign(_animals.values())
-	return out
+	return _list(_animals, AnimalData)
 
 
 func gatherable(id: StringName) -> GatherableData:
 	return _lookup(_gatherables, id, "gatherable") as GatherableData
 
 
-func gatherables() -> Array[GatherableData]:
+func has_gatherable(id: StringName) -> bool:
 	_ensure_built()
-	return Array(_gatherables.values(), TYPE_OBJECT, &"Resource", GatherableData)
+	return _gatherables.has(id)
+
+
+func gatherables() -> Array[GatherableData]:
+	return _list(_gatherables, GatherableData)
 
 
 func npc(id: StringName) -> NPCData:
@@ -171,10 +151,7 @@ func npc(id: StringName) -> NPCData:
 
 
 func npcs() -> Array[NPCData]:
-	_ensure_built()
-	var out: Array[NPCData] = []
-	out.assign(_npcs.values())
-	return out
+	return _list(_npcs, NPCData)
 
 
 func quest(id: StringName) -> QuestData:
@@ -182,10 +159,7 @@ func quest(id: StringName) -> QuestData:
 
 
 func quests() -> Array[QuestData]:
-	_ensure_built()
-	var out: Array[QuestData] = []
-	out.assign(_quests.values())
-	return out
+	return _list(_quests, QuestData)
 
 
 func festival(id: StringName) -> FestivalData:
@@ -193,10 +167,7 @@ func festival(id: StringName) -> FestivalData:
 
 
 func festivals() -> Array[FestivalData]:
-	_ensure_built()
-	var out: Array[FestivalData] = []
-	out.assign(_festivals.values())
-	return out
+	return _list(_festivals, FestivalData)
 
 
 ## Festival on a G.Season + day of season (1-based), or null (quietly).
@@ -213,9 +184,7 @@ func tool_tier(id: StringName) -> ToolTierData:
 
 ## All tiers, lowest rank first.
 func tool_tiers() -> Array[ToolTierData]:
-	_ensure_built()
-	var out: Array[ToolTierData] = []
-	out.assign(_tool_tiers.values())
+	var out := _list(_tool_tiers, ToolTierData)
 	out.sort_custom(func(a: ToolTierData, b: ToolTierData) -> bool: return a.rank < b.rank)
 	return out
 
@@ -225,8 +194,7 @@ func shop(id: StringName) -> ShopData:
 
 
 func shops() -> Array[ShopData]:
-	_ensure_built()
-	return Array(_shops.values(), TYPE_OBJECT, &"Resource", ShopData)
+	return _list(_shops, ShopData)
 
 
 # --- Diagnostics ---
@@ -259,43 +227,32 @@ func tool_kinds() -> Array[int]:
 	return ToolTiers.TOOL_KINDS
 
 
-func placeholder_texture() -> Texture2D:
-	_ensure_built()
-	return _builder.placeholder()
-
-
 # --- Internals ---
 
 func _ensure_built() -> void:
 	if _builder != null:
 		return
 	_builder = Builder.new()
-	var item_rows: Dictionary = {}
-	_builder.merge(item_rows, ItemsTools.ROWS, "item")
-	_builder.merge(item_rows, ItemsGoods.ROWS, "item")
-	for id: StringName in item_rows:
-		_items[id] = _builder.item(id, item_rows[id])
-	for id: StringName in Crops.ROWS:
-		_crops[id] = _builder.crop(id, Crops.ROWS[id])
-		_crop_by_seed[_crops[id].seed_item] = _crops[id]
-	for id: StringName in Recipes.ROWS:
-		_recipes[id] = _builder.recipe(id, Recipes.ROWS[id])
-	for id: StringName in Stations.ROWS:
-		_stations[id] = _builder.station(id, Stations.ROWS[id])
-	for id: StringName in Animals.ROWS:
-		_animals[id] = _builder.animal(id, Animals.ROWS[id])
-	for id: StringName in Gatherables.ROWS:
-		_gatherables[id] = _builder.gatherable(id, Gatherables.ROWS[id])
-	for id: StringName in Npcs.ROWS:
-		_npcs[id] = _builder.npc(id, Npcs.ROWS[id])
-	for id: StringName in Quests.ROWS:
-		_quests[id] = _builder.quest(id, Quests.ROWS[id])
-	for id: StringName in Festivals.ROWS:
-		_festivals[id] = _builder.festival(id, Festivals.ROWS[id])
-	for id: StringName in ToolTiers.ROWS:
-		_tool_tiers[id] = _builder.tool_tier(id, ToolTiers.ROWS[id])
-	for id: StringName in Shops.ROWS:
-		_shops[id] = _builder.shop(id, Shops.ROWS[id])
+	var tables := _builder.build_all()
+	_items.assign(tables[&"items"])
+	_crops.assign(tables[&"crops"])
+	_recipes.assign(tables[&"recipes"])
+	_stations.assign(tables[&"stations"])
+	_animals.assign(tables[&"animals"])
+	_gatherables.assign(tables[&"gatherables"])
+	_npcs.assign(tables[&"npcs"])
+	_quests.assign(tables[&"quests"])
+	_festivals.assign(tables[&"festivals"])
+	_tool_tiers.assign(tables[&"tool_tiers"])
+	_shops.assign(tables[&"shops"])
+	for crop_row: CropData in _crops.values():
+		_crop_by_seed[crop_row.seed_item] = crop_row
+
+
+## The values of a built table as a typed array of `type` (the one place lists are made).
+func _list(table: Dictionary, type: Script) -> Array:
+	_ensure_built()
+	return Array(table.values(), TYPE_OBJECT, &"Resource", type)
 
 
 func _lookup(table: Dictionary, id: StringName, kind: String) -> Resource:

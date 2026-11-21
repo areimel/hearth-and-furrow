@@ -36,7 +36,7 @@ Economy="*res://scripts/autoload/economy.gd"
 Relationships="*res://scripts/autoload/relationships.gd"
 QuestManager="*res://scripts/autoload/quest_manager.gd"
 Settings="*res://scripts/autoload/settings.gd"
-GameSession="*res://scripts/world/game_session.gd"
+GameSession="*res://scripts/autoload/game_session.gd"
 
 [display]
 

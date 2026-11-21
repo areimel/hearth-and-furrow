@@ -14,6 +14,10 @@ class_name AnimalData extends Resource
 @export var product_days: int = 1
 ## Item eaten once per day from the trough; unfed animals do not produce that day.
 @export var feed_item: StringName
+## Prompt verb for collecting the product ("Milk", "Shear"); empty = "Collect <item>".
+@export var collect_verb: String = ""
+## G.Season values in which grazing is not enough and the feed item is needed.
+@export var feed_seasons: Array[int] = []
 @export var sprite_path: String
 ## Loaded sprite sheet (placeholder if missing).
 @export var sprite: Texture2D
