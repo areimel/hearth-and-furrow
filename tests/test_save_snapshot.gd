@@ -10,7 +10,18 @@ static func capture() -> Dictionary:
 	var herd: Dictionary = sections.get(&"livestock", {})
 	for entry: Dictionary in herd.get("animals", []):
 		entry.erase("pos")
+	var farm: Dictionary = sections.get(&"farm", {})
+	for key: String in ["tilled", "wet"]:
+		if farm.has(key):
+			farm[key].sort_custom(_pair_less)
+	if farm.has("crops"):
+		farm["crops"].sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			return _pair_less(a["cell"], b["cell"]))
 	return sections
+
+
+static func _pair_less(a: Array, b: Array) -> bool:
+	return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1])
 
 
 ## Names of the sections that differ between two captures ("" separated list when equal).
