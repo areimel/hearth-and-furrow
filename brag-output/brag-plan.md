@@ -21,3 +21,10 @@
 
 ## Privacy
 Every person on screen is a fictional villager. No save data from a player is used: the capture harness uses a throwaway session.
+
+## As built (2026-11-21)
+- **Outro:** moved from the dusk clip to the bright day farm after review, to end on a postable frame.
+- **Herd shot:** framed at 5× like the May Day and shop stills, so the caption sits in the margin, not on the hotbar.
+- **Captions:** fade with a 12px move and sit in a lane above the hotbar.
+- **Music:** the storm bar is about 3 dB down, bar 2 has a light tabor, and the master is at about -13.6 LUFS.
+- **Rebuild:** `work/capture_stills.sh`, `work/capture_clips.sh` (uses `rec.sh`), `uv run --with numpy python -I work/music.py`, `uv run --with playwright python -I work/render.py`, `work/mux.sh 220`.
