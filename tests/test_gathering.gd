@@ -121,16 +121,6 @@ func test_save_round_trip_keeps_depletion_timer_and_pending() -> void:
 
 # ---------------------------------------------------------------- feature root
 
-func _spawn_level() -> Array:
-	var level: Level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
-	var forage: Foraging = level.get_node("Foraging")
-	for i in 4:
-		await tree.process_frame
-	return [level, forage]
-
-
 func _signature(forage: Foraging) -> Array:
 	var out: Array = forage.nodes().map(func(n: Gatherable) -> String: return "%s%s" % [n.gatherable_id, n.coord])
 	out.sort()
@@ -138,9 +128,8 @@ func _signature(forage: Foraging) -> Array:
 
 
 func test_scatter_obeys_placement_rules_and_is_deterministic() -> void:
-	var pair := await _spawn_level()
-	var level: Level = pair[0]
-	var forage: Foraging = pair[1]
+	var level := await spawn_level(5)
+	var forage: Foraging = level.get_node("Foraging")
 	var grid: FarmGrid = level.farm_grid
 	check(SaveManager.is_registered(&"foraging"), "registered")
 	var expected := 0
@@ -179,15 +168,13 @@ func test_scatter_obeys_placement_rules_and_is_deterministic() -> void:
 	Weather.world_seed = 4243
 	forage.reset()
 	check(_signature(forage) != first, "different seed, different world")
-	level.free()
-	await tree.process_frame
+	await despawn_level()
 	check(not SaveManager.is_registered(&"foraging"), "unregistered on exit")
 
 
 func test_save_round_trip_and_forage_area_markers() -> void:
-	var pair := await _spawn_level()
-	var level: Level = pair[0]
-	var forage: Foraging = pair[1]
+	var level := await spawn_level(5)
+	var forage: Foraging = level.get_node("Foraging")
 	var first := forage.nodes()[0]
 	first.depleted = true
 	first.regrow_left = 2
@@ -220,5 +207,4 @@ func test_save_round_trip_and_forage_area_markers() -> void:
 	for node in forage.nodes().slice(count_before):
 		eq(node.gatherable_id, &"stone", "marker id")
 		check(node.global_position.distance_to(marker.global_position) <= 216.0, "inside the radius")
-	level.free()
-	await tree.process_frame
+	await despawn_level()

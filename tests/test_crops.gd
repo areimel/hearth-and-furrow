@@ -12,19 +12,10 @@ func before_each() -> void:
 
 
 func _spawn() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
+	level = await spawn_level()
 	grid = level.farm_grid
 	field = grid.crop_field
-	level.day_cycle.fade_time = 0.0
-	level.day_cycle.hold_time = 0.0
 	Weather.set_today(G.WeatherKind.CLEAR)
-
-
-func _despawn() -> void:
-	level.free()
-	await tree.process_frame
 
 
 ## Roll `count` dry days (never rain), optionally watering `cell` each evening.
@@ -49,7 +40,7 @@ func test_field_crop_ripens_in_days_without_water() -> void:
 	check(not crop.is_ripe(), "not ripe a day early")
 	_days(1)
 	check(crop.is_ripe(), "ripe after %d dry days" % days)
-	await _despawn()
+	await despawn_level()
 
 
 func test_garden_crop_needs_water() -> void:
@@ -60,7 +51,7 @@ func test_garden_crop_needs_water() -> void:
 	eq(crop.age, 0, "dry garden crop does not grow")
 	_days(2, cell)
 	eq(crop.age, 2, "watered garden crop grows")
-	await _despawn()
+	await despawn_level()
 
 
 func test_out_of_season_pauses_and_never_dies() -> void:
@@ -71,7 +62,7 @@ func test_out_of_season_pauses_and_never_dies() -> void:
 	_days(5, cell)
 	eq(crop.age, 0, "paused out of season")
 	check(is_instance_valid(crop) and field.crop_at(cell) == crop, "still planted")
-	await _despawn()
+	await despawn_level()
 
 
 func test_weeds_reduce_yield_but_not_below_one() -> void:
@@ -82,7 +73,7 @@ func test_weeds_reduce_yield_but_not_below_one() -> void:
 	check(crop.yield_amount() < crop.data.yield_amount, "one weed costs yield")
 	crop.weeds = Balance.MAX_WEEDS
 	eq(crop.yield_amount(), 1, "never below 1")
-	await _despawn()
+	await despawn_level()
 
 
 func test_hoe_clears_weeds_and_is_valid_only_on_weedy_crop() -> void:
@@ -94,7 +85,7 @@ func test_hoe_clears_weeds_and_is_valid_only_on_weedy_crop() -> void:
 	check(grid.is_tool_valid(G.ToolKind.HOE, cell), "hoe valid on weedy crop")
 	level._hoe(cell)
 	eq(crop.weeds, 0, "weeds pulled")
-	await _despawn()
+	await despawn_level()
 
 
 func test_sickle_reaps_only_ripe_crops_into_inventory() -> void:
@@ -111,7 +102,7 @@ func test_sickle_reaps_only_ripe_crops_into_inventory() -> void:
 	eq(Progress.count("harvested.wheat_sheaf"), crop.data.yield_amount, "progress recorded")
 	await tree.process_frame
 	check(field.crop_at(cell) == null and not grid.is_occupied(cell), "cell freed")
-	await _despawn()
+	await despawn_level()
 
 
 func test_regrowing_crop_stays_and_ripens_again() -> void:
@@ -124,7 +115,7 @@ func test_regrowing_crop_stays_and_ripens_again() -> void:
 	check(not crop.is_ripe(), "regrowing")
 	_days(crop.data.regrow_days)
 	check(crop.is_ripe(), "ripe again after regrow_days")
-	await _despawn()
+	await despawn_level()
 
 
 func test_blighted_and_flattened_crops_still_yield() -> void:
@@ -139,7 +130,7 @@ func test_blighted_and_flattened_crops_still_yield() -> void:
 	var before := Inventory.count(Balance.FLATTENED_SALVAGE_ITEM)
 	check(field.reap(Vector2i(18, -7)) >= 1, "salvage gives something")
 	eq(Inventory.count(Balance.FLATTENED_SALVAGE_ITEM), before + 1, "one straw")
-	await _despawn()
+	await despawn_level()
 
 
 func test_farm_section_round_trip() -> void:
@@ -165,4 +156,4 @@ func test_farm_section_round_trip() -> void:
 	check(grid.is_occupied(cell), "cell claimed again")
 	grid.from_dict({})
 	eq(field.crops().size(), 0, "from_dict({}) empties the farm")
-	await _despawn()
+	await despawn_level()

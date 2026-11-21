@@ -57,8 +57,3 @@ func show_page(index: int) -> void:
 		var target := initial_focus()
 		if target:
 			target.grab_focus()
-
-
-## The shown page index.
-func page_index() -> int:
-	return _index

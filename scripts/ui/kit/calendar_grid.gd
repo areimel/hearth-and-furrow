@@ -17,15 +17,6 @@ func show_season(season_value: int, today_day: int = -1) -> void:
 	queue_redraw()
 
 
-## Day-of-season numbers (1..28) that hold a feast in the shown season.
-func feast_days() -> Array[int]:
-	var out: Array[int] = []
-	for day in Balance.DAYS_PER_SEASON:
-		if Calendar.festival_today(_index(day + 1)) != null:
-			out.append(day + 1)
-	return out
-
-
 func _get_minimum_size() -> Vector2:
 	var cell := _cell()
 	return Vector2(cell.x * Balance.DAYS_PER_WEEK, cell.y * (WEEKDAY_ROWS + 2) + 2)

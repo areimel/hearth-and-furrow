@@ -202,12 +202,8 @@ func test_animal_purchase_without_livestock() -> void:
 
 
 func test_animal_purchase_with_livestock() -> void:
-	var level: Level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
+	var level := await spawn_level(3)
 	var live: Livestock = level.get_node("Livestock")
-	await tree.process_frame
-	await tree.process_frame
 	Economy.add_coins(3000)
 	var sheep := live.count(&"sheep")
 	eq(Economy.shop_buy(&"shepherd", &"animal:sheep"), "", "sheep bought")
@@ -220,8 +216,7 @@ func test_animal_purchase_with_livestock() -> void:
 	GameClock.day_ending.emit(0)  # restock, so only the pen limit can refuse
 	eq(Economy.shop_buy(&"shepherd", &"animal:cow"), "No room for another", "pen full")
 	eq(Economy.coins, coins, "no charge when refused")
-	level.free()
-	await tree.process_frame
+	await despawn_level()
 
 
 func test_stock_survives_save_and_old_saves_load() -> void:

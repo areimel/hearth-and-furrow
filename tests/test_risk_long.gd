@@ -17,19 +17,9 @@ func before_each() -> void:
 
 
 func _spawn() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
+	level = await spawn_level()
 	field = level.farm_grid.crop_field
-	level.day_cycle.fade_time = 0.0
-	level.day_cycle.hold_time = 0.0
 	risk = level.get_node("RiskSystem")
-	await tree.process_frame
-
-
-func _despawn() -> void:
-	level.free()
-	await tree.process_frame
 
 
 func _plant(cell: Vector2i) -> void:
@@ -72,4 +62,4 @@ func test_twenty_years_of_wheat_after_wheat_stays_cozy() -> void:
 	for world_seed in [11]:
 		var loss := _run(world_seed)
 		check(loss <= MAX_LOSS_SHARE, "seed %d lost %.1f%% of the yield" % [world_seed, loss * 100.0])
-	await _despawn()
+	await despawn_level()

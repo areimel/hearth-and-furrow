@@ -4,8 +4,6 @@ class_name Livestock extends LevelFeature
 ## a free pen near `pen_anchor`, and saves under `livestock`.
 
 const ANIMAL_SCENE := preload("res://scenes/actors/animal.tscn")
-## Starter herd: species id -> count.
-const STARTER_HERD: Dictionary = {&"cow": 1, &"sheep": 1, &"chicken": 2}
 ## Free cells a pen needs (width x height) and the grazing radius (pixels) inside it.
 const PEN_CELLS := Vector2i(6, 5)
 const PEN_RADIUS := 30.0
@@ -75,8 +73,8 @@ func _on_level_ready() -> void:
 
 ## New game: starter herd of 1 cow, 1 sheep and 2 chickens.
 func _new_game_setup() -> void:
-	for id: StringName in STARTER_HERD:
-		for i in int(STARTER_HERD[id]):
+	for id: StringName in Balance.STARTER_HERD:
+		for i in int(Balance.STARTER_HERD[id]):
 			_spawn(id, _random_pen_point())
 
 

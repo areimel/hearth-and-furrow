@@ -11,17 +11,10 @@ func before_each() -> void:
 
 
 func _spawn() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
+	level = await spawn_level()
 	grid = level.farm_grid
 	Weather.set_today(G.WeatherKind.CLEAR)
 	_start = _find_run()
-
-
-func _despawn() -> void:
-	level.free()
-	await tree.process_frame
 
 
 ## A cell whose two eastern neighbours are farmable, dry, free and untilled.
@@ -69,7 +62,7 @@ func test_iron_hoe_tills_two_cells_wooden_one() -> void:
 	check(not grid.is_tilled(_second()), "wooden leaves the next cell")
 	_swing(G.ToolKind.HOE, &"hoe_iron_shod")
 	check(grid.is_tilled(_second()), "iron tills the next cell")
-	await _despawn()
+	await despawn_level()
 
 
 func test_invalid_second_cell_is_skipped() -> void:
@@ -78,7 +71,7 @@ func test_invalid_second_cell_is_skipped() -> void:
 	_swing(G.ToolKind.HOE, &"hoe_iron_shod")
 	check(grid.is_tilled(_first()), "valid first cell tilled")
 	check(not grid.is_tilled(_second()), "occupied second cell skipped")
-	await _despawn()
+	await despawn_level()
 
 
 func test_iron_can_waters_two_cells() -> void:
@@ -94,7 +87,7 @@ func test_iron_can_waters_two_cells() -> void:
 	grid.soil_layer.erase_cell(_second())
 	_swing(G.ToolKind.WATERING_CAN, &"watering_can_iron_shod")
 	check(grid.is_wet(_first()) and not grid.is_wet(_second()), "untilled cell skipped")
-	await _despawn()
+	await despawn_level()
 
 
 func test_iron_sickle_reaps_each_ripe_cell() -> void:
@@ -110,7 +103,7 @@ func test_iron_sickle_reaps_each_ripe_cell() -> void:
 	_swing(G.ToolKind.SICKLE, &"sickle_iron_shod")
 	check(grid.crop_field.crop_at(_second()) == null, "iron reaps the ripe second cell")
 	check(grid.crop_field.crop_at(_first()) != null, "unripe first cell skipped")
-	await _despawn()
+	await despawn_level()
 
 
 func test_highlight_covers_every_affected_cell() -> void:
@@ -122,7 +115,7 @@ func test_highlight_covers_every_affected_cell() -> void:
 	check(grid.target_layer.get_cell_source_id(_second()) != -1, "second cell lit")
 	grid.update_highlight(pos, Vector2.RIGHT, G.ToolKind.HOE, Content.tool_tier(&"wooden"))
 	check(grid.target_layer.get_cell_source_id(_second()) == -1, "wooden lights one cell")
-	await _despawn()
+	await despawn_level()
 
 
 func test_iron_rod_makes_the_minigame_more_forgiving() -> void:
@@ -135,7 +128,7 @@ func test_iron_rod_makes_the_minigame_more_forgiving() -> void:
 	near(base, 1.0, 0.001, "wooden factor")
 	check(eased > base, "iron catches faster")
 	check(game.lose_speed < game.FISH_KINDS[game.fish_kind]["lose_speed"], "iron loses slower")
-	await _despawn()
+	await despawn_level()
 
 
 func test_sowing_records_progress() -> void:
@@ -147,4 +140,4 @@ func test_sowing_records_progress() -> void:
 	level._sow(_first())
 	eq(Progress.count(&"sowed.wheat"), before + 1, "sowed.wheat counter")
 	check(grid.crop_field.crop_at(_first()) != null, "crop planted")
-	await _despawn()
+	await despawn_level()

@@ -20,6 +20,7 @@ func _ready() -> void:
 			case.tree = get_tree()
 			case.before_each()
 			await case.call(method_name)
+			case.after_each()
 			total += 1
 			if case.failures.is_empty():
 				print("PASS %s::%s" % [file, method_name])

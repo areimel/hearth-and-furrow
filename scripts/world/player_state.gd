@@ -26,18 +26,8 @@ func _restore(data: Dictionary) -> void:
 		player.position = Vector2(float(pos[0]), float(pos[1]))
 	if data.has("facing"):
 		var facing: Array = data["facing"]
-		_face(player, Vector2(float(facing[0]), float(facing[1])))
+		player.face(Vector2(float(facing[0]), float(facing[1])))
 
 
 func _new_game_setup() -> void:
 	_restore({})
-
-
-## Turn the player to `dir` the way walking does: target direction plus every blend position.
-func _face(player: Player, dir: Vector2) -> void:
-	player.animation_direction = dir
-	var anim_tree := player.get_node("Animation/AnimationTree") as AnimationTree
-	for path: String in ["StateMachine/idle", "StateMachine/walk", "FishIdleBlendSpace2D"]:
-		anim_tree.set("parameters/%s/blend_position" % path, dir)
-	for animation: StringName in PlayerActions.ANIMATIONS.values():
-		anim_tree.set("parameters/ToolStateMachine/%s/blend_position" % animation, dir)

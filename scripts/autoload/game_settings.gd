@@ -1,6 +1,6 @@
 class_name GameSettings extends Node
 ## Player settings, persisted to user://settings.cfg and applied immediately.
-## Register as autoload "Settings" (scripts/autoload/settings.gd). Code that must also
+## Register as autoload "Settings" (scripts/autoload/game_settings.gd). Code that must also
 ## work without the autoload (menu, tests) uses GameSettings.instance(tree), which finds
 ## /root/Settings or creates one.
 ##

@@ -76,11 +76,6 @@ func shown_item_name() -> String:
 	return _item_name.text
 
 
-## Push a toast now, bypassing pickup coalescing.
-func push_toast(text: String, icon: Texture2D = null) -> void:
-	_toasts.push(text, icon)
-
-
 ## Emit one toast per item gathered since the last flush ("+3 Wheat sheaf").
 func flush_pickups() -> void:
 	for id in _pending:

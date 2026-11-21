@@ -137,11 +137,6 @@ func gatherable(id: StringName) -> GatherableData:
 	return _lookup(_gatherables, id, "gatherable") as GatherableData
 
 
-func has_gatherable(id: StringName) -> bool:
-	_ensure_built()
-	return _gatherables.has(id)
-
-
 func gatherables() -> Array[GatherableData]:
 	return _list(_gatherables, GatherableData)
 

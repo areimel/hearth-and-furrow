@@ -143,7 +143,7 @@ func test_miller_bread_errand_with_bought_barm_and_favour() -> void:
 	_harvest(&"wheat_sheaf", 1)
 	_craft(&"thresh_wheat")
 	_craft(&"grind_flour")
-	check(Economy.buy(&"barm", 1), "barm bought from the alewife's trade")
+	eq(Economy.shop_buy(&"alewife", &"item:barm"), "", "barm bought from the alewife's trade")
 	_craft(&"bake_bread")
 	check(QuestGiver.OPT_READY in stub.offered(&"miller"), "ready")
 	var coins := Economy.coins

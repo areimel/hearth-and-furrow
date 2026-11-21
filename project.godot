@@ -35,7 +35,7 @@ Inventory="*res://scripts/autoload/inventory.gd"
 Economy="*res://scripts/autoload/economy.gd"
 Relationships="*res://scripts/autoload/relationships.gd"
 QuestManager="*res://scripts/autoload/quest_manager.gd"
-Settings="*res://scripts/autoload/settings.gd"
+Settings="*res://scripts/autoload/game_settings.gd"
 GameSession="*res://scripts/autoload/game_session.gd"
 AudioDirector="*res://scripts/autoload/audio_director.gd"
 

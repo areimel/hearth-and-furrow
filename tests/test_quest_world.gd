@@ -11,12 +11,9 @@ func before_each() -> void:
 
 
 func _spawn() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
+	level = await spawn_level()
 	giver = load("res://scenes/world/quest_giver.tscn").instantiate()
 	level.add_child(giver)
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
-	await tree.process_frame
 
 
 func test_sowing_and_watering_advance_the_prologue() -> void:
@@ -39,7 +36,6 @@ func test_sowing_and_watering_advance_the_prologue() -> void:
 	await tree.process_frame
 	check(level.farm_grid.is_wet(garden), "the can watered the garden cell")
 	eq(QuestManager.current_step(&"prologue"), 2, "watered cabbage")
-	level.free()
-	await tree.process_frame
+	await despawn_level()
 	check(QuestManager.condition_progress(&"prologue", 0) == 4, "latched after the level is gone")
 	SaveManager.new_game()

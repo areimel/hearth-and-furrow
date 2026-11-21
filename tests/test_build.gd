@@ -13,19 +13,10 @@ func before_each() -> void:
 
 
 func _spawn() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
+	level = await spawn_level(4)
 	works = level.get_node("Workstations")
 	mode = level.build_mode
-	await tree.process_frame
-	await tree.process_frame
 	menu = tree.get_first_node_in_group(BuildMenu.BUILD_GROUP)
-
-
-func _despawn() -> void:
-	level.free()
-	await tree.process_frame
 
 
 ## A buildable cell; the player is moved beside it so it is the target cell.
@@ -46,7 +37,7 @@ func test_starter_yard_is_only_the_starter_set() -> void:
 	eq(ids.size(), 4, "four starter stations")
 	for id: StringName in [&"churn", &"quern", &"threshing_floor", &"workbench"]:
 		check(id in ids, "%s in the starter yard" % id)
-	await _despawn()
+	await despawn_level()
 
 
 func test_validity_rules() -> void:
@@ -65,7 +56,7 @@ func test_validity_rules() -> void:
 			check(not grid.is_buildable(water_cell), "water refused")
 			break
 	check(works.build(&"churn", works.stations()[0].coord) == null, "cannot build over a station")
-	await _despawn()
+	await despawn_level()
 
 
 func test_build_pays_cost_and_occupies_the_cell() -> void:
@@ -83,7 +74,7 @@ func test_build_pays_cost_and_occupies_the_cell() -> void:
 	eq(Inventory.count(&"log"), 0, "logs paid")
 	eq(Inventory.count(&"hazel_rod"), 0, "rods paid")
 	check(not mode.active(), "leaves placement once it cannot afford another")
-	await _despawn()
+	await despawn_level()
 
 
 func test_placement_stays_while_affordable() -> void:
@@ -97,7 +88,7 @@ func test_placement_stays_while_affordable() -> void:
 	mode.exit()
 	check(not mode.active() and not level.player.action_override.is_valid(), "exit clears the override")
 	check(works.station_at(cell) != null, "built")
-	await _despawn()
+	await despawn_level()
 
 
 func test_remove_refunds_half_rounded_down() -> void:
@@ -114,7 +105,7 @@ func test_remove_refunds_half_rounded_down() -> void:
 	check(works.station_at(cell) == null, "removed")
 	eq(Inventory.count(&"stone"), 5, "stone refunded")
 	eq(Inventory.count(&"clay"), 3, "clay refunded")
-	await _despawn()
+	await despawn_level()
 
 
 func test_remove_refused_while_busy_or_holding_output() -> void:
@@ -133,7 +124,7 @@ func test_remove_refused_while_busy_or_holding_output() -> void:
 	check(not works.can_remove(cell), "output waiting refused")
 	churn.collect()
 	check(works.can_remove(cell), "idle and empty can go")
-	await _despawn()
+	await despawn_level()
 
 
 func test_menu_lists_every_station_greys_and_removes() -> void:
@@ -149,7 +140,7 @@ func test_menu_lists_every_station_greys_and_removes() -> void:
 	Inventory.add(&"log", 4)
 	check(not menu.is_entry_greyed(churn_index), "churn available with logs")
 	menu.close()
-	await _despawn()
+	await despawn_level()
 
 
 func test_build_action_opens_menu_and_choosing_enters_placement() -> void:
@@ -167,4 +158,4 @@ func test_build_action_opens_menu_and_choosing_enters_placement() -> void:
 	check(mode.active() and mode.station_id == &"churn" and not menu.is_open, "choice enters placement")
 	mode._unhandled_input(press)
 	check(not mode.active(), "build exits")
-	await _despawn()
+	await despawn_level()

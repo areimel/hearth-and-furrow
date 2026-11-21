@@ -10,17 +10,8 @@ func before_each() -> void:
 
 
 func _spawn() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)  # the root is busy while the runner starts
-	await tree.process_frame
+	level = await spawn_level(3)
 	works = level.get_node("Workstations")
-	await tree.process_frame
-	await tree.process_frame
-
-
-func _despawn() -> void:
-	level.free()
-	await tree.process_frame
 
 
 func test_starter_yard_places_the_starter_stations_on_dry_untilled_ground() -> void:
@@ -34,7 +25,7 @@ func test_starter_yard_places_the_starter_stations_on_dry_untilled_ground() -> v
 		check(level.farm_grid.occupant(station.coord) == station, "%s claims its cell" % station.station_id)
 		eq(station.get_parent(), level.stations(), "spawned into level.stations()")
 	eq(seen.size(), Balance.STARTER_STATIONS.size(), "all ids distinct")
-	await _despawn()
+	await despawn_level()
 
 
 func test_build_pays_cost_and_remove_frees_cell() -> void:
@@ -55,7 +46,7 @@ func test_build_pays_cost_and_remove_frees_cell() -> void:
 	await tree.process_frame
 	check(works.station_at(cell) == null, "gone")
 	check(not level.farm_grid.is_occupied(cell), "cell released")
-	await _despawn()
+	await despawn_level()
 
 
 func test_save_round_trip_restores_cells_and_jobs() -> void:
@@ -76,4 +67,4 @@ func test_save_round_trip_restores_cells_and_jobs() -> void:
 	works.reset()
 	eq(works.stations().size(), Balance.STARTER_STATIONS.size(), "reset lays out a fresh yard")
 	check(not works.station_at(cell).is_working(), "fresh yard is idle")
-	await _despawn()
+	await despawn_level()

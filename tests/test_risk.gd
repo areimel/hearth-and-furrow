@@ -14,22 +14,12 @@ func before_each() -> void:
 
 
 func _spawn(day: int = 20) -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
+	level = await spawn_level()
 	grid = level.farm_grid
 	field = grid.crop_field
-	level.day_cycle.fade_time = 0.0
-	level.day_cycle.hold_time = 0.0
 	risk = level.get_node("RiskSystem")
-	await tree.process_frame
 	GameClock.day_index = day
 	Weather.from_dict({"today": G.WeatherKind.CLEAR, "forecast": G.WeatherKind.CLEAR, "world_seed": 5})
-
-
-func _despawn() -> void:
-	level.free()
-	await tree.process_frame
 
 
 func _sow(crop_id: StringName, cell: Vector2i, ripe: bool = false) -> Crop:
@@ -74,7 +64,7 @@ func test_storm_flattens_at_most_forty_percent_of_ripe_grain_only() -> void:
 	check(not young.is_flattened(), "unripe grain untouched")
 	check(not peas.is_flattened(), "non-grain untouched")
 	check(risk.recent_losses() == flat, "bad week counter")
-	await _despawn()
+	await despawn_level()
 
 
 func test_storm_never_takes_everything_and_flattened_crop_still_yields() -> void:
@@ -93,7 +83,7 @@ func test_storm_never_takes_everything_and_flattened_crop_still_yields() -> void
 	var before := Inventory.count(Balance.FLATTENED_SALVAGE_ITEM)
 	check(field.reap(Vector2i(5, -23)) >= 1, "salvage reaped")
 	eq(Inventory.count(Balance.FLATTENED_SALVAGE_ITEM), before + 1, "straw")
-	await _despawn()
+	await despawn_level()
 
 
 func test_reaping_before_the_storm_removes_the_risk() -> void:
@@ -107,7 +97,7 @@ func test_reaping_before_the_storm_removes_the_risk() -> void:
 		field.reap(cell)
 	_next_day(G.WeatherKind.CLEAR)
 	eq(risk.recent_losses(), 0, "nothing left to flatten")
-	await _despawn()
+	await despawn_level()
 
 
 func test_storm_result_does_not_depend_on_growth_order() -> void:
@@ -119,7 +109,7 @@ func test_storm_result_does_not_depend_on_growth_order() -> void:
 	Weather.set_today(G.WeatherKind.STORM)
 	_next_day(G.WeatherKind.CLEAR)
 	check(not tonight.is_flattened(), "a crop that ripened tonight was not in the storm")
-	await _despawn()
+	await despawn_level()
 
 
 func test_week_one_is_risk_free() -> void:
@@ -133,7 +123,7 @@ func test_week_one_is_risk_free() -> void:
 		_next_day(G.WeatherKind.RAIN)
 		eq(_afflicted(), 0, "no blight on day %d" % GameClock.day_index)
 	check(field.crops().all(func(c: Crop) -> bool: return not c.is_flattened()), "no flattening")
-	await _despawn()
+	await despawn_level()
 
 
 func test_blight_needs_wet_spell_and_same_crop_before() -> void:
@@ -156,7 +146,7 @@ func test_blight_needs_wet_spell_and_same_crop_before() -> void:
 		check(not swapped.blight_warning and not swapped.blighted, "rotated cell stays healthy")
 		seen = seen or same.blight_warning or same.blighted
 	check(seen, "wet spell spots the crop prev=%s wet=%s day=%d season=%d age=%d" % [risk.previous_crop(same.cell), Weather.is_wet_spell(), GameClock.day_index, Calendar.season(), same.age])
-	await _despawn()
+	await despawn_level()
 
 
 func test_blight_cap_and_warning_day_cure() -> void:
@@ -183,7 +173,7 @@ func test_blight_cap_and_warning_day_cure() -> void:
 	check(not spotted.blight_warning, "hoeing cures the warning")
 	_next_day(G.WeatherKind.CLEAR)
 	check(not spotted.blighted, "cured crop does not turn")
-	await _despawn()
+	await despawn_level()
 
 
 func test_uncured_warning_turns_and_blighted_still_yields() -> void:
@@ -198,7 +188,7 @@ func test_uncured_warning_turns_and_blighted_still_yields() -> void:
 	crop.weeds = Balance.MAX_WEEDS
 	check(crop.yield_amount() >= 1, "yield at least 1")
 	check(Inventory.count(&"wheat_sheaf") + field.reap(Vector2i(0, -31)) > 0, "reaps")
-	await _despawn()
+	await despawn_level()
 
 
 func test_save_round_trip_and_advice() -> void:
@@ -214,5 +204,5 @@ func test_save_round_trip_and_advice() -> void:
 	eq(risk.recent_losses(), 0, "empty save")
 	check(risk.advice() != "", "advice text")
 	check(SaveManager.is_registered(&"risks"), "registered")
-	await _despawn()
+	await despawn_level()
 	check(not SaveManager.is_registered(&"risks"), "unregistered on exit")
