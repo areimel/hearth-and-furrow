@@ -7,6 +7,7 @@ extends SceneTree
 const THEME_PATH := "res://scenes/ui/game_theme.tres"
 const FONT_PATH := "res://graphics/fonts/PixeloidSans.ttf"
 const FONT_SIZE := 9
+const SMALL_FONT_SIZE := 8
 const THEME_UID := "uid://bv8t0obbc2n47"
 
 
@@ -46,6 +47,9 @@ func _labels(theme: Theme) -> void:
 	theme.set_constant("line_spacing", "Label", 1)
 	theme.set_type_variation("HeaderLabel", "Label")
 	theme.set_color("font_color", "HeaderLabel", UIPalette.RUST)
+	# SmallLabel: secondary text (key hints, counts). The Large text option resizes it.
+	theme.set_type_variation("SmallLabel", "Label")
+	theme.set_font_size("font_size", "SmallLabel", SMALL_FONT_SIZE)
 	# HudLabel: light text with a dark outline, for text drawn over the world.
 	theme.set_type_variation("HudLabel", "Label")
 	theme.set_color("font_color", "HudLabel", UIPalette.PARCHMENT_LIGHT)
