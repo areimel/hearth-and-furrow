@@ -25,9 +25,9 @@ Rules for contributors (human or agent):
 - [x] 9. Six Tudor crops (field/garden rules, weeds)
 - [x] 10. Placeholder art + ASSET_LICENSES.md
 - [x] 11. Livestock: cow, sheep, chickens
-- [ ] 12. Gathering nodes and two tool tiers
-- [ ] 13. Weather, forecast, seasonal palette
-- [ ] 14. Storm and blight risks with mitigation
+- [x] 12. Gathering nodes and two tool tiers
+- [x] 13. Weather, forecast, seasonal palette
+- [x] 14. Storm and blight risks with mitigation
 - [x] 15. Stations and timed recipes
 - [x] 16. Bread, dairy, ale, linen chains
 - [x] 17. Coin economy and buy/sell shops
@@ -38,14 +38,14 @@ Rules for contributors (human or agent):
 ## Wave 3 — story, UI, persistence
 - [ ] 21. Quests: prologue + three errands
 - [ ] 22. May Day and Harvest Home feasts
-- [ ] 23. HUD
-- [ ] 24. Pause menu tabs
-- [ ] 25. Crafting and shop screens
-- [ ] 26. Save/load, autosave, title menu
+- [x] 23. HUD
+- [x] 24. Pause menu tabs
+- [x] 25. Crafting and shop screens
+- [x] 26. Save/load, autosave, title menu
 - [ ] 27. Audio
 
 ## Wave 4 — hardening
-- [ ] 28. Full-year headless simulation
+- [x] 28. Full-year headless simulation
 - [ ] 29. Review findings fixed
 - [ ] 30. Balance and controller pass
 - [ ] 31. Docs
