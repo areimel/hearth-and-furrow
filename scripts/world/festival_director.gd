@@ -137,7 +137,7 @@ func begin(feast: FestivalData) -> void:
 	_running = feast
 	if villagers != null:
 		var place := feast.gather_place
-		if NPCNav.marker(get_tree(), place) == null:
+		if not Places.has(get_tree(), place):
 			place = feast.location
 		villagers.gather_at(place, feast.spot_prefix)
 	_spawn_table(feast)
@@ -220,9 +220,8 @@ func open_table() -> void:
 
 func _spawn_table(feast: FestivalData) -> void:
 	var level := get_tree().get_first_node_in_group(&"Level") as Level
-	var where: Variant = NPCNav.position_of(get_tree(), feast.location)
-	if where == null:
-		where = level.player.global_position + TABLE_OFFSET if level else Vector2.ZERO
+	var where := Places.position_of(get_tree(), feast.location) if Places.has(get_tree(), feast.location) \
+			else (level.player.global_position + TABLE_OFFSET if level else Vector2.ZERO)
 	_table = TABLE_SCENE.instantiate()
 	var parent: Node = level.stations() if level else self
 	parent.add_child(_table)

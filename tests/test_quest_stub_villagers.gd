@@ -7,11 +7,16 @@ var options: Array[Dictionary] = []
 ## [[place_id, spot_prefix]] per gather_at() call.
 var gathered: Array = []
 var released: int = 0
+var line_provider: Callable = Callable()
 
 
 func register_option(npc_id: StringName, text: String, callback: Callable,
 		condition: Callable = Callable()) -> void:
 	options.append({"npc": npc_id, "text": text, "callback": callback, "condition": condition})
+
+
+func set_line_override(provider: Callable) -> void:
+	line_provider = provider
 
 
 func npc(_id: StringName) -> Node:

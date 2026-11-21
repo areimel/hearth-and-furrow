@@ -1,6 +1,6 @@
 [gd_scene format=4 uid="uid://bfjaiku70hbc8"]
 
-[ext_resource type="Script" uid="uid://x1lxu5p2uw37" path="res://scripts/house.gd" id="1_g6yoe"]
+[ext_resource type="Script" uid="uid://x1lxu5p2uw37" path="res://scripts/objects/house.gd" id="1_g6yoe"]
 [ext_resource type="TileSet" uid="uid://cw45kfg2c8mfk" path="res://resources/house_tileset.tres" id="1_mfwd8"]
 [ext_resource type="Texture2D" uid="uid://dpvg3yddudamn" path="res://graphics/tilesets/walls_floor_tile.png" id="3_bbbus"]
 [ext_resource type="Texture2D" uid="uid://cwbhys0nypuq" path="res://graphics/tilesets/roof.png" id="4_jfia5"]

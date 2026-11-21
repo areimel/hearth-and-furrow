@@ -10,7 +10,6 @@ signal state_changed
 ## What interacting would do right now.
 enum Action { NONE, FEED, COLLECT, PET }
 
-const HEART_EMOTE := "res://graphics/Ninja Adventure - Asset Pack/Ninja Adventure - Asset Pack/Ui/Emote/emote27.png"
 ## Product item -> verb shown on the prompt; other products read "Collect <item>".
 const PRODUCT_VERBS: Dictionary = {&"milk": "Milk", &"fleece": "Shear"}
 ## Seasons in which grazing is not enough and the feed item is needed.
@@ -23,8 +22,6 @@ const MOOD_FED := 4
 const MOOD_GRAZED := 1
 const MOOD_PET := 6
 const MOOD_UNFED := -4
-const SPEED := 14.0
-const PLAYER_STOP_DISTANCE := 20.0
 
 ## Species id; set before adding to the tree (or call `setup`).
 @export var animal_id: StringName
@@ -43,22 +40,20 @@ var product_ready: bool = false
 var progress_days: int = 0
 ## Centre of the grazing area (world pixels).
 var home: Vector2 = Vector2.ZERO
+## Frames in the sprite sheet row (1 = standing sprite).
+var frames: int = 1
 ## Species row, null until set up.
 var data: AnimalData
 
-var _wandering: bool = false
-var _wait: float = 1.0
-var _target: Vector2 = Vector2.ZERO
-var _walk_time: float = 0.0
-var _frames: int = 1
+var _wander: Wander
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _interactable: Interactable = $Interactable
-@onready var _emote: Sprite2D = $Emote
+@onready var _emote: Emote = $Emote
+
 
 func _ready() -> void:
-	_emote.texture = load(HEART_EMOTE)
-	_emote.hide()
+	_wander = Wander.new(self, _sprite)
 	_interactable.interacted.connect(_on_interacted)
 	Inventory.hotbar_selection_changed.connect(func(_i: int) -> void: refresh())
 	Inventory.changed.connect(refresh)
@@ -112,7 +107,7 @@ func feed() -> bool:
 		return false
 	fed_today = true
 	add_mood(MOOD_FED)
-	_show_heart()
+	_emote.pop(Emote.HEART)
 	_changed()
 	return true
 
@@ -121,11 +116,8 @@ func feed() -> bool:
 func collect() -> bool:
 	if data == null or not product_ready or not Inventory.can_add(data.product_item, data.product_amount):
 		return false
-	Inventory.add(data.product_item, data.product_amount)
-	Progress.record(&"gathered", data.product_item, data.product_amount)
+	Loot.give(get_tree(), data.product_item, data.product_amount, &"gathered")
 	product_ready = false
-	var item := Content.item(data.product_item)
-	Toast.show_message(get_tree(), "+%d %s" % [data.product_amount, item.display_name], item.icon)
 	_changed()
 	return true
 
@@ -136,7 +128,7 @@ func pet() -> bool:
 		return false
 	petted_today = true
 	add_mood(MOOD_PET)
-	_show_heart()
+	_emote.pop(Emote.HEART)
 	_changed()
 	return true
 
@@ -170,14 +162,15 @@ func end_day(day: int = -1) -> void:
 	_changed()
 
 
-## Re-evaluate the prompt and whether the interactable is usable. The prompt text is
-## published as meta `prompt_text` on the Interactable.
+## Re-evaluate the prompt and whether the interactable is usable: the prompt is
+## published as the Interactable's `prompt_text`; with nothing to do it is disabled.
 func refresh() -> void:
 	if data == null:
 		return
 	var text := prompt_text()
 	_interactable.enabled = text != ""
-	_interactable.set_meta(&"prompt_text", text)
+	if text != "":
+		_interactable.prompt_text = text
 
 
 # ---------------------------------------------------------------- save
@@ -210,8 +203,8 @@ func _apply_data() -> void:
 	var tex := data.sprite
 	_sprite.texture = tex
 	var size := tex.get_size()
-	_frames = maxi(1, roundi(size.x / maxf(size.y, 1.0)))
-	_sprite.hframes = _frames
+	frames = maxi(1, roundi(size.x / maxf(size.y, 1.0)))
+	_sprite.hframes = frames
 	_sprite.frame = 0
 	_sprite.offset = Vector2(0, -size.y / 2.0 + 2.0)  # feet on the node origin
 	refresh()
@@ -228,73 +221,11 @@ func _on_interacted(_player: Node) -> void:
 			feed()
 		Action.COLLECT:
 			if not collect():
-				Toast.show_message(get_tree(), "Your pack is full")
+				Toast.show_message(get_tree(), Loot.PACK_FULL)
 		Action.PET:
 			pet()
 
 
-func _show_heart() -> void:
-	_emote.show()
-	_emote.modulate.a = 1.0
-	var tween := create_tween()
-	tween.tween_interval(0.9)
-	tween.tween_property(_emote, "modulate:a", 0.0, 0.3)
-	tween.tween_callback(_emote.hide)
-
-
 func _physics_process(delta: float) -> void:
-	if data == null:
-		return
-	if _player_adjacent():
-		_wandering = false
-	elif _wandering:
-		_walk()
-	else:
-		_wait -= delta
-		if _wait <= 0.0:
-			_pick_target()
-	if not _wandering:
-		velocity = Vector2.ZERO
-	_animate(delta)
-
-
-func _walk() -> void:
-	var to_target := _target - position
-	if to_target.length() < 2.0:
-		_wandering = false
-		_wait = randf_range(1.5, 4.0)
-		return
-	velocity = to_target.normalized() * SPEED
-	_sprite.flip_h = velocity.x < 0.0
-	move_and_slide()
-	if get_slide_collision_count() > 0:
-		_wandering = false
-		_wait = 1.0
-
-
-func _pick_target() -> void:
-	var candidate := home + Vector2.from_angle(randf() * TAU) * randf() * home_radius
-	var grid := _grid()
-	if grid and grid.is_water(grid.cell_of(candidate)):
-		_wait = 1.0
-		return
-	_target = candidate
-	_wandering = true
-
-
-func _player_adjacent() -> bool:
-	var player := get_tree().get_first_node_in_group("Player") as Node2D
-	return player != null and player.global_position.distance_to(global_position) < PLAYER_STOP_DISTANCE
-
-
-func _animate(delta: float) -> void:
-	if _frames < 2 or not _wandering:
-		_sprite.frame = 0
-		return
-	_walk_time += delta
-	_sprite.frame = int(_walk_time / 0.25) % _frames
-
-
-func _grid() -> FarmGrid:
-	var level := get_tree().get_first_node_in_group("Level") as Level
-	return level.farm_grid if level else null
+	if data != null:
+		_wander.tick(delta)

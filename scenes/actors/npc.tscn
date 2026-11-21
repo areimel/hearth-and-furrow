@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/npc.gd" id="1_npc"]
-[ext_resource type="Script" path="res://scripts/actors/npc_emote.gd" id="3_emote"]
+[ext_resource type="Script" path="res://scripts/components/emote.gd" id="3_emote"]
 [ext_resource type="PackedScene" uid="uid://c7ntrjx4q0k8e" path="res://scenes/components/interactable.tscn" id="2_int"]
 
 [node name="NPC" type="CharacterBody2D"]
@@ -17,14 +17,7 @@ vframes = 7
 
 [node name="Interactable" parent="." instance=ExtResource("2_int")]
 position = Vector2(0, -8)
-
-[node name="PromptLabel" type="Label" parent="."]
-visible = false
-offset_left = -40.0
-offset_top = -38.0
-offset_right = 40.0
-offset_bottom = -26.0
-horizontal_alignment = 1
+prompt_text = "Talk"
 
 [node name="Emote" type="Sprite2D" parent="."]
 visible = false

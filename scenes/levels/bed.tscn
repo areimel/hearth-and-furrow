@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dh6ybk44v1xuu"]
 
-[ext_resource type="Script" uid="uid://lx88lj4lycwa" path="res://scripts/bed.gd" id="1_7op6d"]
+[ext_resource type="Script" uid="uid://lx88lj4lycwa" path="res://scripts/objects/bed.gd" id="1_7op6d"]
 [ext_resource type="Texture2D" uid="uid://cp17uql2yvcxi" path="res://graphics/objects/bed.png" id="1_co7c2"]
 [ext_resource type="PackedScene" path="res://scenes/components/interactable.tscn" id="2_int"]
 
@@ -8,13 +8,13 @@
 size = Vector2(16, 22)
 
 [node name="bed" type="StaticBody2D" unique_id=2076695548]
-metadata/prompt_text = "Sleep"
 scale = Vector2(1.25, 1.25)
 collision_layer = 4
 collision_mask = 2
 script = ExtResource("1_7op6d")
 
 [node name="Interactable" parent="." unique_id=2146484999 instance=ExtResource("2_int")]
+prompt_text = "Sleep"
 
 [node name="BedSprite2D" type="Sprite2D" parent="." unique_id=1376069899]
 texture = ExtResource("1_co7c2")
