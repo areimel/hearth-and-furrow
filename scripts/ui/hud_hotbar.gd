@@ -2,8 +2,6 @@ class_name HudHotbar extends PanelContainer
 ## The ten hotbar slots (Inventory 0..9) in one row, the selected one framed in gold,
 ## each with its 1..0 key number. Display only: the slots take no focus or mouse.
 
-const Balance := preload("res://data/balance.gd")
-
 var _grid: ItemGrid
 
 

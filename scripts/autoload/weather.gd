@@ -9,8 +9,6 @@ signal weather_changed(today: int, forecast: int)
 ## `day` is the day index of the storm.
 signal storm_warning(day: int)
 
-const Balance := preload("res://data/balance.gd")
-
 var today: int = G.WeatherKind.CLEAR
 var forecast: int = G.WeatherKind.CLEAR
 ## Saved; fixes every future roll for this playthrough.

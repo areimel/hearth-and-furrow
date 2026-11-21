@@ -4,8 +4,6 @@ class_name FarmGrid extends Node
 ## Cells are Vector2i grid coordinates, cell = floor(world_pos / Balance.TILE_SIZE).
 ## `is_tool_valid` is the single authority on whether a tool works on a cell.
 
-const Balance := preload("res://data/balance.gd")
-
 const HIGHLIGHT_GREEN := Vector2i(12, 1)
 const HIGHLIGHT_RED := Vector2i(1, 1)
 const SOIL_TERRAIN_SET := 0

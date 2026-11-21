@@ -1,6 +1,6 @@
-extends RefCounted
+class_name Balance extends RefCounted
 ## Global tuning numbers. Const-only. Per-item / per-crop numbers live on their own rows,
-## not here. Access as `Balance.X` after `const Balance := preload("res://data/balance.gd")`.
+## not here. Access as `Balance.X` from anywhere.
 
 # --- World ---
 const TILE_SIZE: int = 16

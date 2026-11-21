@@ -3,8 +3,6 @@ extends TestCase
 
 const SCREEN_SCENE := preload("res://scenes/ui/shop_screen.tscn")
 const SHOPS_SCENE := preload("res://scenes/world/shops.tscn")
-const Balance := preload("res://data/balance.gd")
-
 
 ## Stand-in for the NPC system's Villagers node: records register_option calls.
 class FakeVillagers extends Node:

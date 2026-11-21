@@ -3,7 +3,6 @@ class_name Crop extends Node2D
 ## crops) when their tile stayed dry, they simply pause. Growth resolves once a day from
 ## CropField.resolve_day(). Weeds, blight and storms only reduce the yield (never below 1).
 
-const Balance := preload("res://data/balance.gd")
 ## Pixel width of one growth frame in a crop sprite sheet.
 const FRAME_WIDTH: int = 16
 const WEED_COLOR := Color(0.28, 0.5, 0.2)

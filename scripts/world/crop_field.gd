@@ -3,8 +3,6 @@ class_name CropField extends Node
 ## A child of FarmGrid, which claims each crop's cell (occupancy) and registers the shared
 ## `farm` save section; this node supplies the crops part of it.
 
-const Balance := preload("res://data/balance.gd")
-
 @export var grid: FarmGrid
 ## Parent of crop nodes (the level's y-sorted Objects/Crops).
 @export var container: Node2D

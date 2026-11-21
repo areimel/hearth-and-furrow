@@ -1,8 +1,6 @@
 extends TestCase
 ## Axe tiers and renewable trees: hits to fell, logs, stump regrow, apple seasons, saving.
 
-const Balance := preload("res://data/balance.gd")
-
 var level: Level
 var _spawned: Array[AppleTree] = []
 

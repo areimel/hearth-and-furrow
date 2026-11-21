@@ -10,7 +10,6 @@ signal item_added(id: StringName, amount: int)
 signal item_removed(id: StringName, amount: int)
 signal capacity_changed(backpack_capacity: int)
 
-const Balance := preload("res://data/balance.gd")
 const HOTBAR_SIZE: int = Balance.HOTBAR_SLOTS
 
 ## Read-only outside this script; change it with select_hotbar()/cycle_hotbar().

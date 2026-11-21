@@ -1,8 +1,6 @@
 extends TestCase
 ## What the hotbar item does, and what happens to loot when the pack is full.
 
-const Balance := preload("res://data/balance.gd")
-
 
 func before_each() -> void:
 	SaveManager.new_game()

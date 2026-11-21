@@ -1,7 +1,6 @@
 extends TestCase
 ## Weather rules: determinism, storm limits, honest forecast, wet spells, outlook, saving.
 
-const Balance := preload("res://data/balance.gd")
 const YEARS := 4
 
 

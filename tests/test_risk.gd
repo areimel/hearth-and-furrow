@@ -1,7 +1,6 @@
 extends TestCase
 ## Storm and blight rules on a real level with a RiskSystem attached.
 
-const Balance := preload("res://data/balance.gd")
 const WET := [G.WeatherKind.RAIN, G.WeatherKind.RAIN, G.WeatherKind.RAIN]
 
 var level: Level

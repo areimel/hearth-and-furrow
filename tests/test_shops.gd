@@ -1,8 +1,6 @@
 extends TestCase
 ## Shop data, shop-aware pricing, stock, and every kind of transaction.
 
-const Balance := preload("res://data/balance.gd")
-
 
 func before_each() -> void:
 	SaveManager.new_game()

@@ -13,7 +13,6 @@ signal do_action(anim_tree: AnimationTree, property: StringName, action: int, po
 ## The nearest Interactable in range changed (null = none).
 signal interact_focus_changed(target: Interactable)
 
-const Balance := preload("res://data/balance.gd")
 const HOTBAR_ACTIONS: Array[StringName] = [
 	&"hotbar_1", &"hotbar_2", &"hotbar_3", &"hotbar_4", &"hotbar_5",
 	&"hotbar_6", &"hotbar_7", &"hotbar_8", &"hotbar_9", &"hotbar_10",

@@ -16,7 +16,7 @@ func test_chain_preview_is_derived_from_content() -> void:
 func test_duration_text() -> void:
 	eq(CraftingText.duration(Content.recipe(&"press_cheese")), "Overnight", "overnight")
 	eq(CraftingText.duration(Content.recipe(&"bake_bread")), "2 h", "two hours")
-	eq(CraftingText.minutes_text(90), "1 h 30", "ninety")
+	eq(UIText.minutes(90), "1 h 30", "ninety")
 
 
 func test_screen_opens_collects_and_starts_job() -> void:

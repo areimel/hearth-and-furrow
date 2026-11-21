@@ -2,8 +2,6 @@ extends TestCase
 ## Crop rules on a real level: field vs garden growth, seasons, weeds, reaping,
 ## blight/storm salvage and the `farm` save section.
 
-const Balance := preload("res://data/balance.gd")
-
 var level: Level
 var grid: FarmGrid
 var field: CropField

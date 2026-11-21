@@ -1,8 +1,6 @@
 extends RefCounted
 ## Cross-checks every id reference in the built content. Used by Content.validate().
 
-const Balance := preload("res://data/balance.gd")
-
 var _c: Node
 var _out: Array[String] = []
 

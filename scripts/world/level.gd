@@ -4,7 +4,6 @@ class_name Level extends Node2D
 ## containers other systems spawn into. Find it with
 ## get_tree().get_first_node_in_group("Level").
 
-const Balance := preload("res://data/balance.gd")
 const REACH: float = 22.0  ## How far an axe swing reaches, in pixels.
 const PREVIEW_TINT := Color(1, 1, 1, 0.59)
 
@@ -15,6 +14,7 @@ const PREVIEW_TINT := Color(1, 1, 1, 0.59)
 @onready var build_mode: BuildMode = $BuildMode
 @onready var _preview: Sprite2D = $Overlay/PreviewMachineSprite2D
 @onready var _prompt: Prompt = $Overlay/CanvasLayer/HUD/GameHud/Shown/Prompt
+var _focused: Interactable
 @onready var _target_info: Label = $Overlay/CanvasLayer/HUD/TargetInfo
 
 
@@ -153,13 +153,26 @@ func _swing(action: int, pos: Vector2, dir: Vector2, reach: float, tier: ToolTie
 # ---------------------------------------------------------------- HUD feedback
 
 func _on_interact_focus_changed(target: Interactable) -> void:
+	if _focused != null and is_instance_valid(_focused):
+		_focused.prompt_changed.disconnect(_show_interact_prompt)
+	_focused = target
+	if target != null:
+		target.prompt_changed.connect(_show_interact_prompt)
+	_show_interact_prompt()
+
+
+## Shows the focused interactable's prompt. Legacy callers may still publish the text as
+## meta `prompt_text` on the Interactable or its parent; the property wins when set.
+func _show_interact_prompt(_text: String = "") -> void:
 	if is_building():
 		return  # BuildMode owns the prompt
-	if target == null:
+	if _focused == null or not is_instance_valid(_focused):
 		_prompt.hide_prompt()
 		return
-	var text: Variant = target.get_meta(&"prompt_text", target.get_parent().get_meta(&"prompt_text", "Use"))
-	_prompt.show_prompt(&"action", str(text))
+	var text: String = _focused.prompt_text
+	if text == "Use":
+		text = str(_focused.get_meta(&"prompt_text", _focused.get_parent().get_meta(&"prompt_text", "Use")))
+	_prompt.show_prompt(&"action", text)
 
 
 ## With the highlighter on: tint the target cell and describe the crop standing on it.

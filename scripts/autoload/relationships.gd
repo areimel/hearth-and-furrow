@@ -9,7 +9,6 @@ signal hearts_changed(npc_id: StringName, hearts: int)
 signal talked(npc_id: StringName)
 signal gifted(npc_id: StringName, item_id: StringName, reaction: int)
 
-const Balance := preload("res://data/balance.gd")
 const MAX_POINTS: int = Balance.MAX_HEARTS * Balance.POINTS_PER_HEART
 
 var _points: Dictionary[StringName, int] = {}

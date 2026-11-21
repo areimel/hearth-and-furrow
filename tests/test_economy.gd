@@ -1,8 +1,6 @@
 extends TestCase
 ## Economy: purse, prices, market-day bonus, buy/sell through the Inventory.
 
-const Balance := preload("res://data/balance.gd")
-
 
 func before_each() -> void:
 	SaveManager.new_game()

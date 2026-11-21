@@ -1,6 +1,5 @@
 extends TestCase
 
-const Balance := preload("res://data/balance.gd")
 ## Proves the runner works and the project's autoloads are reachable from tests.
 
 

@@ -12,7 +12,6 @@ enum Mode { OFF, PLACE, REMOVE }
 ## Mode changed (also emitted when switching between PLACE and REMOVE).
 signal mode_changed(mode: Mode)
 
-const Balance := preload("res://data/balance.gd")
 const TINT_VALID := Color(0.55, 1.0, 0.55, 0.8)
 const TINT_INVALID := Color(1.0, 0.4, 0.4, 0.8)
 

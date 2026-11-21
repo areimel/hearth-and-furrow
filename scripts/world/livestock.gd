@@ -3,7 +3,6 @@ class_name Livestock extends Node2D
 ## spawns the animals into `level.animals()`, creates a starter herd on a new game around
 ## a free pen near `pen_anchor`, and registers with SaveManager under `livestock`.
 
-const Balance := preload("res://data/balance.gd")
 const ANIMAL_SCENE := preload("res://scenes/actors/animal.tscn")
 const SAVE_KEY := &"livestock"
 ## Starter herd: species id -> count.

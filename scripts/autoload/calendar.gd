@@ -10,7 +10,6 @@ signal year_changed(year: int)
 ## The new day is a feast day.
 signal festival_day(festival: FestivalData)
 
-const Balance := preload("res://data/balance.gd")
 const SEASON_NAMES: Array[String] = ["Spring", "Summer", "Autumn", "Winter"]
 const WEEKDAY_NAMES: Array[String] = [
 	"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",

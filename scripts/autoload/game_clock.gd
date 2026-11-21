@@ -17,8 +17,6 @@ signal day_passed(day_index: int)
 signal passed_out
 signal running_changed(running: bool)
 
-const Balance := preload("res://data/balance.gd")
-
 ## Days since the game began; 0 = Lady Day (spring 1, year 1).
 var day_index: int = 0
 var hour: int = Balance.DAY_START_HOUR

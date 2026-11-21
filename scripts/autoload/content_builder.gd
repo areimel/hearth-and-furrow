@@ -2,7 +2,6 @@ extends RefCounted
 ## Turns const rows from data/*.gd into typed resources. Used only by Content.
 ## Records problems (duplicate ids, bad texture paths) instead of failing.
 
-const Balance := preload("res://data/balance.gd")
 const P := preload("res://data/paths.gd")
 
 ## Paths that do not exist, outside the placeholder folder: content errors.

@@ -7,7 +7,6 @@ class_name RiskSystem extends Node
 ## first; blight is decided on the following morning (`day_passed`), after growth.
 ## Never both disasters on one crop, nothing in the first week, never a death spiral.
 
-const Balance := preload("res://data/balance.gd")
 const SAVE_KEY := &"risks"
 
 ## Set to override the lookup (tests); otherwise resolved from the Level.

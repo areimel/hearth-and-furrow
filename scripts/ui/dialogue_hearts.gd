@@ -2,7 +2,6 @@ class_name DialogueHearts extends Control
 ## Row of small pixel hearts showing friendship: `hearts` of Balance.MAX_HEARTS are filled.
 ## Drawn in code so no art is needed; colours come from UIPalette.
 
-const Balance := preload("res://data/balance.gd")
 const SHAPE: Array[String] = [
 	".XX.XX.",
 	"XXXXXXX",

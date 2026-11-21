@@ -6,8 +6,6 @@ signal coins_changed(coins: int, delta: int)
 signal item_sold(id: StringName, amount: int, coins: int)
 signal item_bought(id: StringName, amount: int, coins: int)
 
-const Balance := preload("res://data/balance.gd")
-
 ## Current purse. Change it only through add_coins()/spend().
 var coins: int = Balance.START_COINS
 

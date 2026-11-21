@@ -5,7 +5,6 @@ class_name AppleTree extends StaticBody2D
 ## evenings, but only in Balance.APPLE_SEASONS. Saved by TreeGrove.
 
 const APPLE_TEXTURE := preload("res://graphics/plants/apple.png")
-const Balance := preload("res://data/balance.gd")
 const APPLE_RANGE := Vector2i(2, 4)
 
 ## Remaining hit points; the axe's tier `power` is subtracted per hit.

@@ -3,7 +3,6 @@ class_name WorldSky extends Node
 ## storm darkness with lightning, wind-driven rain and crop sway.
 ## Driven by GameClock.day_progress(), Calendar and Weather.weather_changed; owns no game state.
 
-const Balance := preload("res://data/balance.gd")
 const SWAY_SHADER := preload("res://shaders/sway.gdshader")
 
 ## Shared material crops put on their sprite (wind sway); the sky sets its strength.

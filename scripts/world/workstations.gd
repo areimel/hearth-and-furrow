@@ -7,7 +7,6 @@ class_name Workstations extends Node
 ## Group of the crafting screen (found, or created under the first CanvasLayer).
 const SCREEN_GROUP := &"CraftingScreen"
 const SCREEN_SCENE := preload("res://scenes/ui/crafting_screen.tscn")
-const Balance := preload("res://data/balance.gd")
 ## Stations per row of the starter yard and the cell gap between stations.
 const YARD_COLUMNS := 2
 const YARD_SPACING := 2

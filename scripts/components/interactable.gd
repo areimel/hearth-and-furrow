@@ -9,6 +9,16 @@ class_name Interactable extends Area2D
 ## Emitted when the player presses action while this is the nearest interactable.
 signal interacted(player: Node)
 
+## Emitted when `prompt_text` changes, so the HUD can update a prompt already on screen.
+signal prompt_changed(text: String)
+
+## What pressing action will do, shown in the HUD prompt ("Talk", "Milk", "Sleep").
+@export var prompt_text: String = "Use":
+	set(value):
+		if value != prompt_text:
+			prompt_text = value
+			prompt_changed.emit(value)
+
 ## Disabled interactables are ignored by the player and show no prompt.
 @export var enabled: bool = true:
 	set(value):

@@ -6,7 +6,6 @@ class_name Foraging extends Node2D
 ## `gatherable_id` and `count` (and optional `radius` in pixels, default 48) gets that many
 ## nodes scattered around it on a new game.
 
-const Balance := preload("res://data/balance.gd")
 const SAVE_KEY := &"foraging"
 const AREA_GROUP := &"ForageArea"
 ## Used when Weather.world_seed is still 0.

@@ -3,7 +3,6 @@ class_name FolkRow extends Button
 ## with today, gift given today). Someone not yet met shows as "???" with a dark face.
 ## The row is a focusable button only so the list can be scrolled with the d-pad.
 
-const Balance := preload("res://data/balance.gd")
 const FACE := 16
 const HEIGHT := 18
 ## Faceset sheets are 38 px with a border; this crop is the 32 px face, shown at half size.

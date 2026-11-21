@@ -3,7 +3,6 @@ class_name CalendarGrid extends Control
 ## Today is boxed in gold, market days carry a green dot and feast days a red one, with
 ## a two-word legend underneath. Sizes follow the theme font so Large text still fits.
 
-const Balance := preload("res://data/balance.gd")
 const WEEKDAY_ROWS := 4
 
 var _season: int = 0

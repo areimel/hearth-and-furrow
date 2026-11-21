@@ -1,8 +1,6 @@
 extends TestCase
 ## Workstations on a real level: starter yard, build cost, removal and the save section.
 
-const Balance := preload("res://data/balance.gd")
-
 var level: Level
 var works: Workstations
 

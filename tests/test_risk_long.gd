@@ -2,7 +2,6 @@ extends TestCase
 ## Statistical guarantee: even the worst habits (same wheat every time, reaping two days
 ## late, ignoring every warning) never lose more than a cozy share of the yield.
 
-const Balance := preload("res://data/balance.gd")
 const YEARS := 10
 const FIELD_CELLS := 12
 const REAP_LAG := 2

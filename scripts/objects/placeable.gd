@@ -4,8 +4,6 @@ class_name Placeable extends StaticBody2D
 ## `parent`, and register with the level's FarmGrid. Frees itself on remove()
 ## and releases its cell whenever it leaves the tree.
 
-const Balance := preload("res://data/balance.gd")
-
 var coord: Vector2i
 var grid: FarmGrid
 

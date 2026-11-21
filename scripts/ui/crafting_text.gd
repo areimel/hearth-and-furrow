@@ -6,18 +6,7 @@ class_name CraftingText extends RefCounted
 static func duration(recipe: RecipeData) -> String:
 	if recipe.overnight:
 		return "Overnight"
-	return minutes_text(recipe.minutes)
-
-
-## "45 min", "2 h", "1 h 30"; "Instant" for 0.
-static func minutes_text(minutes: int) -> String:
-	if minutes <= 0:
-		return "Instant"
-	if minutes < 60:
-		return "%d min" % minutes
-	if minutes % 60 == 0:
-		return "%d h" % (minutes / 60)
-	return "%d h %02d" % [minutes / 60, minutes % 60]
+	return UIText.minutes(recipe.minutes)
 
 
 ## Where this recipe sits in its production chain, e.g.

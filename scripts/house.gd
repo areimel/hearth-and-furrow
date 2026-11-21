@@ -1,7 +1,5 @@
 extends Node2D
 
-const Balance := preload("res://data/balance.gd")
-
 var empty_tile_atlas_coord: Vector2i = Vector2i(0, 5)
 var door_tile_atlas_coord: Vector2i = Vector2i(0, 4)
 var door_coord: Vector2i

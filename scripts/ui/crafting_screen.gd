@@ -108,7 +108,7 @@ func _show_jobs() -> void:
 	for job in station.jobs():
 		var name := Content.recipe(job["recipe"]).display_name
 		var left: int = job["minutes_left"]
-		lines.append("%s: %s" % [name, "until morning" if left < 0 else CraftingText.minutes_text(left) + " left"])
+		lines.append("%s: %s" % [name, "until morning" if left < 0 else UIText.minutes(left) + " left"])
 	var slots := station.data().slots if station.data() else 1
 	var header := "Working (%d/%d)" % [station.job_count(), slots] if not lines.is_empty() else "Idle"
 	_jobs_label.text = "\n".join([header] + lines)
