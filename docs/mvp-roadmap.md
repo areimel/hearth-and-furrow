@@ -17,23 +17,23 @@ Rules for contributors (human or agent):
 - [x] 3. Remove legacy course content
 - [x] 4. 320x180 pixel-perfect display and theme
 - [x] 5. Content registry and typed data resources
-- [ ] 6. Game clock, calendar, day-end pipeline
-- [ ] 7. Slot inventory, hotbar-driven player, UI kit
+- [x] 6. Game clock, calendar, day-end pipeline
+- [x] 7. Slot inventory, hotbar-driven player, UI kit
 - [x] 8. Split level into farm grid, world state, mediator
 
 ## Wave 2 — systems
-- [ ] 9. Six Tudor crops (field/garden rules, weeds)
-- [ ] 10. Placeholder art + ASSET_LICENSES.md
-- [ ] 11. Livestock: cow, sheep, chickens
+- [x] 9. Six Tudor crops (field/garden rules, weeds)
+- [x] 10. Placeholder art + ASSET_LICENSES.md
+- [x] 11. Livestock: cow, sheep, chickens
 - [ ] 12. Gathering nodes and two tool tiers
 - [ ] 13. Weather, forecast, seasonal palette
 - [ ] 14. Storm and blight risks with mitigation
-- [ ] 15. Stations and timed recipes
-- [ ] 16. Bread, dairy, ale, linen chains
-- [ ] 17. Coin economy and buy/sell shops
-- [ ] 18. Village district
-- [ ] 19. Six villagers with schedules
-- [ ] 20. Friendship, gifts, dialogue
+- [x] 15. Stations and timed recipes
+- [x] 16. Bread, dairy, ale, linen chains
+- [x] 17. Coin economy and buy/sell shops
+- [x] 18. Village district
+- [x] 19. Six villagers with schedules
+- [x] 20. Friendship, gifts, dialogue
 
 ## Wave 3 — story, UI, persistence
 - [ ] 21. Quests: prologue + three errands
