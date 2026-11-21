@@ -260,3 +260,47 @@ prompt read "Needs an axe" until a matching tool is in the pack.
   Level, shows a "Saved" toast after the morning fade-in, and hooks any node with signals `save_and_quit_requested` /
   `quit_requested` (group `GameMenu`) to `save_and_quit()` / `quit_to_title()` (no save).
 - **Boot**: main scene is `scenes/ui/title.tscn`. Scenes that boot straight into the level (tests, `tools/*`) never enable autosave.
+
+## Quests (additions by the quests branch)
+- **QuestData** new fields: `sequential` (conditions are steps done in order; finished steps
+  latch, item conditions excepted), `auto_start`, `note` (Almanack), `chain`, `crops`
+  (crop ids the errand needs; drives the giver's out-of-season line), `perk_text`,
+  `perk_gives`, `perk_takes` (daily favour once complete), `has_perk()`.
+- **QuestCondition** new kinds: `met` (met >= amount villagers), `days` (days since the
+  quest, or the current step, began), `probe` (a number reported by a registered world
+  probe, e.g. `sown.wheat`, `watered.cabbage`). New field `targets` (COUNTER: summed
+  counters; feast asks: accepted items), helpers `ids()`, `accepts(item)`.
+- **QuestReward** new kind `friendship_all`; new field `text`; `describe() -> String`
+  ("50 coins", "6 Seed Barley", "Friendship: Ned Miller"; flags describe as "" unless `text`).
+- **QuestManager** additions: `current_step(id) -> int`, `condition_required(id, i) -> int`,
+  `start_auto_quests() -> Array[StringName]`, `register_probe(key, callable)`,
+  `unregister_probe(key)`, `perk_available(id)`, `can_claim_perk(id)`, `claim_perk(id) -> bool`,
+  `grant(reward, npc_ids := [])`, signal `step_advanced(quest_id, step)`.
+  Save section `quests` gains `steps`, `step_days`, `start_days`, `perk_days` (old saves load).
+- Journal rendering: for every active/complete quest show `title`, `description` and its
+  conditions with `condition_progress(id, i)` / `condition_required(id, i)`. For a
+  `sequential` quest show only conditions `0..current_step(id)` (earlier ones ticked, the
+  current one live). `note` belongs in the Almanack.
+- Almanack chain notes: `data/almanack.gd` `CHAINS` (chain id -> text).
+- **QuestGiver** (`scenes/world/quest_giver.tscn`, one child of Level): registers giver
+  options via `Villagers.register_option`, starts auto quests on a new game, plays hand-offs,
+  toasts, and registers the field probes. Quest words live in `data/dialogue_quests.gd`.
+- Flags set by quests: `prologue_done`, `miller_fair_measure`, `alewife_barm_share`.
+
+## Feasts (additions by the feasts branch)
+- **FestivalData** new fields: `note` (Almanack), `gather_place` + `spot_prefix` (villagers
+  stand on the child markers `spot_*` of `feast_ground`, else at `location`), `announce`,
+  `reminder`, `asks: Array[QuestCondition]` (DELIVER_ITEM, `targets` = accepted items,
+  `amount` wanted, `text`), `tiers: Array[RewardTier]` (`min_count`, `text`, `rewards`,
+  `describe()`); helpers `is_running_at(hour)`, `total_asked()`, `tier_index(count)`.
+  Feast words live in `data/dialogue_feasts.gd`.
+- **FestivalDirector** (`scenes/world/festival_director.tscn`, one child of Level; save key
+  `festivals`): `today()`, `tomorrow()`, `running()`, `given(f, ask)`, `total_given(f)`,
+  `can_give(f, ask)`, `present()`, `sync()`, `begin(f)`, `contribute(ask) -> int`,
+  `contribute_all() -> int`, `mark_attended()`, `resolve(quiet := false) -> int`,
+  `open_table()`; signals `announced(text)`, `feast_started(id)`,
+  `contributed(id, ask, amount)`, `feast_resolved(id, tier)`.
+  Feast runs `start_hour..end_hour`; resolves at the end hour or on `day_ending` (sleep);
+  only the highest tier reached pays, and only if the player came (table, greeting or gift).
+- **FestivalScreen** (`scenes/ui/festival_screen.tscn`, group `FestivalScreen`): opened by
+  the feast table; instanced under `Menus` on demand if the HUD has none.

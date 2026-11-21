@@ -170,19 +170,42 @@ func quest(id: StringName, row: Dictionary) -> QuestData:
 	res.giver = row.get("giver", &"")
 	res.requires.assign(row.get("requires", []))
 	for c: Dictionary in row.get("conditions", []):
-		var cond := QuestCondition.new()
-		cond.kind = c.get("kind", &"")
-		cond.target = c.get("target", &"")
-		cond.amount = c.get("amount", 1)
-		cond.text = c.get("text", "")
-		res.conditions.append(cond)
-	for r: Dictionary in row.get("rewards", []):
+		res.conditions.append(condition(c))
+	res.rewards.assign(rewards(row.get("rewards", [])))
+	res.sequential = row.get("sequential", false)
+	res.auto_start = row.get("auto", false)
+	res.note = row.get("note", "")
+	res.chain = row.get("chain", &"")
+	res.crops.assign(row.get("crops", []))
+	var perk: Dictionary = row.get("perk", {})
+	res.perk_text = perk.get("text", "")
+	res.perk_gives.assign(perk.get("gives", {}))
+	res.perk_takes.assign(perk.get("takes", {}))
+	return res
+
+
+## A QuestCondition from {kind, target, targets, amount, text}.
+func condition(c: Dictionary) -> QuestCondition:
+	var cond := QuestCondition.new()
+	cond.kind = c.get("kind", &"")
+	cond.target = c.get("target", &"")
+	cond.targets.assign(c.get("targets", []))
+	cond.amount = c.get("amount", 1)
+	cond.text = c.get("text", "")
+	return cond
+
+
+## QuestRewards from [{kind, target, amount, text}].
+func rewards(rows: Array) -> Array[QuestReward]:
+	var out: Array[QuestReward] = []
+	for r: Dictionary in rows:
 		var reward := QuestReward.new()
 		reward.kind = r.get("kind", &"")
 		reward.target = r.get("target", &"")
 		reward.amount = r.get("amount", 1)
-		res.rewards.append(reward)
-	return res
+		reward.text = r.get("text", "")
+		out.append(reward)
+	return out
 
 
 func festival(id: StringName, row: Dictionary) -> FestivalData:
@@ -196,6 +219,21 @@ func festival(id: StringName, row: Dictionary) -> FestivalData:
 	res.start_hour = row.get("start", 9)
 	res.end_hour = row.get("end", 18)
 	res.shops_closed = row.get("shops_closed", true)
+	res.note = row.get("note", "")
+	res.gather_place = row.get("gather", res.location)
+	res.spot_prefix = row.get("spots", "spot_")
+	res.announce = row.get("announce", "")
+	res.reminder = row.get("reminder", "")
+	for a: Dictionary in row.get("asks", []):
+		var ask := condition(a)
+		ask.kind = QuestCondition.DELIVER_ITEM
+		res.asks.append(ask)
+	for t: Dictionary in row.get("tiers", []):
+		var tier := RewardTier.new()
+		tier.min_count = t.get("min", 0)
+		tier.text = t.get("text", "")
+		tier.rewards.assign(rewards(t.get("rewards", [])))
+		res.tiers.append(tier)
 	return res
 
 

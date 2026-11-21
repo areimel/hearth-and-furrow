@@ -33,6 +33,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/build_menu.tscn" id="wired_buildmenu"]
 [ext_resource type="PackedScene" path="res://scenes/world/risk_system.tscn" id="wired_risksystem"]
 [ext_resource type="PackedScene" path="res://scenes/ui/menu.tscn" id="wired_gamemenu"]
+[ext_resource type="PackedScene" path="res://scenes/world/quest_giver.tscn" id="wired_questgiver"]
+[ext_resource type="PackedScene" path="res://scenes/world/festival_director.tscn" id="wired_festivaldirector"]
 
 [sub_resource type="Gradient" id="Gradient_rmjfq"]
 offsets = PackedFloat32Array(0, 0.21830986, 0.42488262, 1)
@@ -2866,6 +2868,10 @@ workstations = NodePath("../Workstations")
 [node name="RiskSystem" parent="." instance=ExtResource("wired_risksystem")]
 
 [node name="GameMenu" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_gamemenu")]
+
+[node name="QuestGiver" parent="." instance=ExtResource("wired_questgiver")]
+
+[node name="FestivalDirector" parent="." instance=ExtResource("wired_festivaldirector")]
 
 [connection signal="do_action" from="Objects/Player" to="." method="_on_player_do_action"]
 [connection signal="tool_use" from="Objects/Player" to="." method="_on_player_tool_use"]
