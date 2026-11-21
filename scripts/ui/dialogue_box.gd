@@ -25,7 +25,7 @@ var _closing: bool = false
 @onready var _portrait: TextureRect = %Portrait
 @onready var _name_label: Label = %NameLabel
 @onready var _role_label: Label = %RoleLabel
-@onready var _hearts: DialogueHearts = %Hearts
+@onready var _hearts: HeartsRow = %Hearts
 @onready var _text: Label = %Text
 @onready var _advance: TextureRect = %Advance
 @onready var _choice_panel: PanelContainer = %ChoicePanel
@@ -35,7 +35,7 @@ var _closing: bool = false
 func _ready() -> void:
 	super()
 	add_to_group(BOX_GROUP)
-	_role_label.add_theme_color_override(&"font_color", UIPalette.RUST)
+	add_to_group(InputGlyphs.GROUP)
 	_choices.entry_selected.connect(_on_choice_selected)
 	_choices.cancelled.connect(_request_close)
 	Relationships.hearts_changed.connect(_on_hearts_changed)
@@ -56,10 +56,15 @@ func show_dialogue(npc: NPCData, lines: Array[String], options: Array[Dictionary
 	_portrait.texture = npc.faceset
 	_name_label.text = npc.display_name
 	_role_label.text = "(%s)" % npc.role
-	_hearts.hearts = Relationships.hearts(npc.id)
+	_hearts.set_hearts(Relationships.hearts(npc.id), Balance.MAX_HEARTS)
 	_advance.texture = InputGlyphs.texture_for(&"action")
 	open()
 	_next_line()
+
+
+## Redraw the advance glyph for the current device (InputGlyphs.GROUP calls this).
+func refresh_glyphs() -> void:
+	_advance.texture = InputGlyphs.texture_for(&"action")
 
 
 func close() -> void:
@@ -143,10 +148,11 @@ func _on_choice_selected(payload: Variant) -> void:
 func _request_close() -> void:
 	_closing = true
 	await get_tree().process_frame
-	if _closing:
+	# The box can be freed (scene change) or reopened while we waited.
+	if is_instance_valid(self) and is_inside_tree() and _closing:
 		close()
 
 
 func _on_hearts_changed(npc_id: StringName, value: int) -> void:
 	if is_open and _npc != null and _npc.id == npc_id:
-		_hearts.hearts = value
+		_hearts.set_hearts(value, Balance.MAX_HEARTS)

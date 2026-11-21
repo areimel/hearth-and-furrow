@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/dialogue_box.gd" id="1_box"]
-[ext_resource type="Script" path="res://scripts/ui/dialogue_hearts.gd" id="2_hearts"]
+[ext_resource type="Script" path="res://scripts/ui/kit/hearts_row.gd" id="2_hearts"]
 [ext_resource type="Script" path="res://scripts/ui/kit/list_menu.gd" id="3_list"]
 
 [node name="DialogueBox" type="Control"]
@@ -74,12 +74,13 @@ theme_type_variation = &"HeaderLabel"
 [node name="RoleLabel" type="Label" parent="Stack/Panel/Row/Column/Header"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_type_variation = &"AccentLabel"
 
 [node name="Spacer" type="Control" parent="Stack/Panel/Row/Column/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Hearts" type="Control" parent="Stack/Panel/Row/Column/Header"]
+[node name="Hearts" type="HBoxContainer" parent="Stack/Panel/Row/Column/Header"]
 unique_name_in_owner = true
 layout_mode = 2
 script = ExtResource("2_hearts")

@@ -76,7 +76,7 @@ func test_unaffordable_ware_is_greyed_with_reason() -> void:
 	screen.open_for(&"chandler")
 	screen._show_ware(&"item:wheat_seed")
 	eq(screen._buy_detail._note.text, "Need 5 coins", "reason shown")
-	check(screen._menu.entry_button(0).has_theme_color_override("font_color"), "greyed")
+	eq(screen._menu.entry_button(0).theme_type_variation, &"ListEntryGrey", "greyed")
 	screen.close()
 	screen.free()
 
@@ -85,13 +85,13 @@ func test_one_sided_shops_hide_the_other_tab() -> void:
 	var screen := _screen()
 	await tree.process_frame
 	screen.open_for(&"blacksmith")
-	check(not screen._tab_labels[ShopScreen.Tab.SELL].visible, "smith has no sell tab")
+	check(not screen._strip.visible, "smith has no sell tab, so no tab strip")
 	screen.show_tab(ShopScreen.Tab.SELL)
 	eq(screen.tab, ShopScreen.Tab.BUY, "stays on buy")
 	eq(screen._menu.entry_count(), 5, "five tool upgrades")
 	screen.close()
 	screen.open_for(&"alewife")
-	check(screen._tab_labels[ShopScreen.Tab.SELL].visible, "alewife buys")
+	check(screen._strip.visible, "alewife buys and sells, so tabs show")
 	screen.close()
 	screen.free()
 

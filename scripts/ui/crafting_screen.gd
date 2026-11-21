@@ -11,7 +11,7 @@ const FRAME_WIDTH := 270
 var station: Station
 var _focused_recipe: StringName
 var _menu: ListMenu
-var _detail: CraftingDetail
+var _detail: DetailPane
 var _jobs_label: Label
 var _frame: PanelFrame
 var _recipe_ids: Array[StringName] = []
@@ -45,20 +45,13 @@ func open_for(target: Station) -> void:
 # ---------------------------------------------------------------- building
 
 func _build_body() -> void:
-	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 4)
-	_menu = ListMenu.new()
-	_menu.custom_minimum_size.x = LIST_WIDTH
-	_menu.max_rows = 6
+	_detail = DetailPane.new()
+	var columns := ListDetail.new(LIST_WIDTH, _detail)
+	_menu = columns.menu
 	_menu.entry_selected.connect(_on_entry_selected)
 	_menu.entry_focused.connect(_on_entry_focused)
-	columns.add_child(_menu)
-	_detail = CraftingDetail.new()
-	columns.add_child(_detail)
 	_frame.add_content(columns)
-	_jobs_label = Label.new()
-	_jobs_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_jobs_label.add_theme_font_size_override("font_size", 8)
+	_jobs_label = UIText.label("", &"HintLabel", FRAME_WIDTH - 16)
 	_frame.add_content(_jobs_label)
 
 
@@ -100,7 +93,8 @@ func _show_detail() -> void:
 	if _focused_recipe.is_empty():
 		return
 	var recipe := Content.recipe(_focused_recipe)
-	_detail.show_recipe(recipe, _block_reason(recipe))
+	_detail.show_info(recipe.display_name, CraftingText.chain_preview(recipe),
+			["Time: " + CraftingText.duration(recipe)], recipe.inputs, _block_reason(recipe), recipe.outputs)
 
 
 func _show_jobs() -> void:
