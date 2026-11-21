@@ -1,9 +1,11 @@
 extends Node2D
 
+const Balance := preload("res://data/balance.gd")
+
 var empty_tile_atlas_coord: Vector2i = Vector2i(0, 5)
 var door_tile_atlas_coord: Vector2i = Vector2i(0, 4)
 var door_coord: Vector2i
-var last_state: Enum.State = Enum.State.DEFAULT
+var last_state: Player.State = Player.State.DEFAULT
 
 
 var in_house: bool:
@@ -26,7 +28,7 @@ func _on_house_area_body_entered(body: Node2D) -> void:
 	in_house = true
 	if body.is_in_group("Player"):
 		last_state = body.current_state
-		body.current_state = Enum.State.HOUSE
+		body.current_state = Player.State.HOUSE
 
 
 func _on_house_area_body_exited(body: Node2D) -> void:
@@ -36,7 +38,7 @@ func _on_house_area_body_exited(body: Node2D) -> void:
 	
 
 func is_point_inside_house(global_pos: Vector2) -> bool:
-	var local_pos = $HouseArea.to_local(global_pos * Data.TILE_SIZE)
+	var local_pos = $HouseArea.to_local(global_pos * Balance.TILE_SIZE)
 	var collision_polygon = $HouseArea/CollisionPolygon2D
 	var polygon_points = collision_polygon.polygon  # This gets the PackedVector2Array
 	

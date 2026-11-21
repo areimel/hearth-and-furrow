@@ -3,6 +3,12 @@
 [ext_resource type="Texture2D" uid="uid://cc04b5oyjs2oq" path="res://graphics/Ninja Adventure - Asset Pack/Ninja Adventure - Asset Pack/Backgrounds/Tilesets/TilesetField.png" id="1_b2cq8"]
 [ext_resource type="Script" uid="uid://8vpund5t01cr" path="res://scripts/world/level.gd" id="1_urvlt"]
 [ext_resource type="Script" path="res://scripts/world/farm_grid.gd" id="farm_grid_script"]
+[ext_resource type="Script" path="res://scripts/world/crop_field.gd" id="crop_field_script"]
+[ext_resource type="PackedScene" path="res://scenes/ui/debug_hud.tscn" id="debug_hud_scene"]
+[ext_resource type="PackedScene" path="res://scenes/ui/kit/toasts.tscn" id="toasts_scene"]
+[ext_resource type="PackedScene" path="res://scenes/ui/kit/prompt.tscn" id="prompt_scene"]
+[ext_resource type="Script" path="res://scripts/world/sky.gd" id="sky_script"]
+[ext_resource type="Script" path="res://scripts/world/day_cycle.gd" id="day_cycle_script"]
 [ext_resource type="PackedScene" uid="uid://b0mnopqlx5dix" path="res://scenes/characters/player.tscn" id="2_b2cq8"]
 [ext_resource type="Texture2D" uid="uid://8cd75smu56l5" path="res://graphics/Ninja Adventure - Asset Pack/Ninja Adventure - Asset Pack/Backgrounds/Tilesets/TilesetFloor.png" id="2_xb4v1"]
 [ext_resource type="Texture2D" uid="uid://ca64obpsrf5sr" path="res://graphics/Sprout Lands - Sprites - Basic pack/Sprout Lands - Sprites - Basic pack/Tilesets/Water.png" id="3_xb4v1"]
@@ -11,12 +17,9 @@
 [ext_resource type="Texture2D" uid="uid://lgw5hjy4jrx0" path="res://graphics/weather/floor.png" id="8_8iyoh"]
 [ext_resource type="PackedScene" uid="uid://iqt34unfal58" path="res://scenes/objects/tree.tscn" id="9_7pb6i"]
 [ext_resource type="PackedScene" uid="uid://tnt55tpg05br" path="res://scenes/objects/simple_object.tscn" id="10_rmjfq"]
-[ext_resource type="PackedScene" uid="uid://cntexmap73t0k" path="res://scenes/ui/plant_info_control.tscn" id="11_7pb6i"]
 [ext_resource type="PackedScene" uid="uid://bfjaiku70hbc8" path="res://scenes/levels/house.tscn" id="12_8iyoh"]
 [ext_resource type="Texture2D" uid="uid://da1u0rhfjt8a3" path="res://graphics/weather/drops.png" id="13_qogh7"]
 [ext_resource type="Texture2D" uid="uid://capn581vt8q7g" path="res://graphics/icons/sprinkler.png" id="15_mq31s"]
-[ext_resource type="PackedScene" uid="uid://dg6oaylgfaiwo" path="res://scenes/ui/inventory.tscn" id="16_jyre1"]
-[ext_resource type="PackedScene" uid="uid://4t651cjey82n" path="res://scenes/ui/keyboard_control_hint_ui.tscn" id="17_jyre1"]
 
 [sub_resource type="Gradient" id="Gradient_rmjfq"]
 offsets = PackedFloat32Array(0, 0.21830986, 0.42488262, 1)
@@ -2338,17 +2341,40 @@ loop = true
 
 [node name="Level" type="Node2D" unique_id=99422741 groups=["Level"]]
 script = ExtResource("1_urvlt")
-daytimer_color = SubResource("Gradient_rmjfq")
-rain_color = Color(0.6682168, 0.6682164, 0.6682166, 1)
-volume_curve = SubResource("Curve_4ab0e")
 
-[node name="FarmGrid" type="Node" parent="." unique_id=1730416281 node_paths=PackedStringArray("ground_layer", "soil_layer", "wet_layer", "target_layer", "house")]
+[node name="FarmGrid" type="Node" parent="." unique_id=1730416281 node_paths=PackedStringArray("ground_layer", "soil_layer", "wet_layer", "target_layer", "house", "crop_field")]
 script = ExtResource("farm_grid_script")
 ground_layer = NodePath("../Layers/WaterGrassLayer")
 soil_layer = NodePath("../Layers/SoilLayer")
 wet_layer = NodePath("../Layers/WetSoilLayer")
 target_layer = NodePath("../Layers/TargetLayer")
 house = NodePath("../Objects/House")
+crop_field = NodePath("CropField")
+
+[node name="CropField" type="Node" parent="FarmGrid" unique_id=1730416300 node_paths=PackedStringArray("grid", "container")]
+script = ExtResource("crop_field_script")
+grid = NodePath("..")
+container = NodePath("../../Objects/Crops")
+
+[node name="Sky" type="Node" parent="." unique_id=1730416290 node_paths=PackedStringArray("canvas_modulate", "floor_rain", "screen_rain", "rain_sound", "music")]
+script = ExtResource("sky_script")
+tint_gradient = SubResource("Gradient_rmjfq")
+rain_color = Color(0.6682168, 0.6682164, 0.6682166, 1)
+volume_curve = SubResource("Curve_4ab0e")
+canvas_modulate = NodePath("../Overlay/CanvasModulate")
+floor_rain = NodePath("../Layers/RainFloorsParticles")
+screen_rain = NodePath("../Overlay/RainParticles2D")
+rain_sound = NodePath("../Sounds/Rain")
+music = NodePath("../Sounds/BG")
+
+[node name="DayCycle" type="Node" parent="." unique_id=1730416291 node_paths=PackedStringArray("fade_rect", "player", "wake_point")]
+script = ExtResource("day_cycle_script")
+fade_rect = NodePath("../Overlay/CanvasLayer/DayTransitionLayer")
+player = NodePath("../Objects/Player")
+wake_point = NodePath("WakePoint")
+
+[node name="WakePoint" type="Marker2D" parent="DayCycle" unique_id=1730416292]
+position = Vector2(297, -164)
 
 [node name="Layers" type="Node2D" parent="." unique_id=317920314]
 
@@ -2724,8 +2750,6 @@ y_sort_enabled = true
 
 [node name="CanvasLayer" type="CanvasLayer" parent="Overlay" unique_id=1770389290]
 
-[node name="PlantInfoControl" parent="Overlay/CanvasLayer" unique_id=627218757 instance=ExtResource("11_7pb6i")]
-
 [node name="HUD" type="Control" parent="Overlay/CanvasLayer" unique_id=1420958316]
 layout_mode = 3
 anchors_preset = 15
@@ -2734,6 +2758,31 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="DebugHud" parent="Overlay/CanvasLayer/HUD" unique_id=1730416310 instance=ExtResource("debug_hud_scene")]
+
+[node name="TargetInfo" type="Label" parent="Overlay/CanvasLayer/HUD" unique_id=1730416311]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -80.0
+offset_top = -32.0
+offset_right = 80.0
+offset_bottom = -22.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_type_variation = &"HudLabel"
+horizontal_alignment = 1
+
+[node name="Toasts" parent="Overlay/CanvasLayer/HUD" unique_id=1730416312 instance=ExtResource("toasts_scene")]
+layout_mode = 1
+
+[node name="Prompt" parent="Overlay/CanvasLayer/HUD" unique_id=1730416313 instance=ExtResource("prompt_scene")]
+layout_mode = 1
 
 [node name="Menus" type="Control" parent="Overlay/CanvasLayer" unique_id=905137642]
 layout_mode = 3
@@ -2754,10 +2803,6 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.04780578, 0.015162113, 0.092368476, 1)
 
-[node name="Inventory" parent="Overlay/CanvasLayer" unique_id=1204295102 instance=ExtResource("16_jyre1")]
-
-[node name="KeyboardControlHintUI" parent="Overlay/CanvasLayer" unique_id=588791315 instance=ExtResource("17_jyre1")]
-
 [node name="RainParticles2D" type="GPUParticles2D" parent="Overlay" unique_id=703477973]
 material = SubResource("CanvasItemMaterial_8iyoh")
 position = Vector2(66, -102)
@@ -2774,13 +2819,6 @@ modulate = Color(1, 1, 1, 0.5921569)
 texture = ExtResource("15_mq31s")
 centered = false
 
-[node name="Timers" type="Node" parent="." unique_id=1515476947]
-
-[node name="DayTimer" type="Timer" parent="Timers" unique_id=1777526827]
-wait_time = 120.0
-one_shot = true
-autostart = true
-
 [node name="Sounds" type="Node2D" parent="." unique_id=439790127]
 
 [node name="Rain" type="AudioStreamPlayer2D" parent="Sounds" unique_id=1103456792]
@@ -2792,11 +2830,5 @@ stream = SubResource("AudioStreamMP3_lp2ca")
 volume_db = -20.0
 autoplay = true
 
-[connection signal="update_hint_ui_keys" from="." to="Overlay/CanvasLayer/KeyboardControlHintUI" method="_on_level_update_hint_ui_keys"]
-[connection signal="build" from="Objects/Player" to="." method="_on_player_build"]
-[connection signal="change_machine" from="Objects/Player" to="." method="_on_player_change_machine"]
-[connection signal="day_change" from="Objects/Player" to="." method="_on_player_day_change"]
-[connection signal="diagnose" from="Objects/Player" to="." method="_on_player_diagnose"]
 [connection signal="do_action" from="Objects/Player" to="." method="_on_player_do_action"]
 [connection signal="tool_use" from="Objects/Player" to="." method="_on_player_tool_use"]
-[connection signal="update_control_ui" from="Objects/Player" to="Overlay/CanvasLayer/KeyboardControlHintUI" method="_on_player_update_control_ui"]

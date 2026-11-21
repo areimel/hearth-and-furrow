@@ -6,11 +6,19 @@ extends Node2D
 # within the moving bar to fill a progress bar and catch the fish.
 # ============================================================================
 
+# Bite behaviour per fish kind: icon, how fast progress rises/falls, starting progress.
+# Every kind lands in the pack as a trout for now (the Player hands out the item).
+const FISH_KINDS: Dictionary = {
+	&"gray": {"icon_texture": "res://graphics/icons/grayfish.png", "catch_speed": 20, "lose_speed": 10, "start_progress": 30},
+	&"silver": {"icon_texture": "res://graphics/icons/silverfish.png", "catch_speed": 15, "lose_speed": 15, "start_progress": 30},
+	&"gold": {"icon_texture": "res://graphics/icons/goldfish.png", "catch_speed": 10, "lose_speed": 20, "start_progress": 30},
+}
+
 # References & Configuration
 var y_range: float                          # Vertical range of the fishing area
 var half_bar_height: float                  # Half height of the catching bar
 var sprite_size: Vector2                    # Size of the bar sprite
-var fish_enum: Enum.Fish                    # Currently selected fish type
+var fish_kind: StringName                   # Currently selected fish kind (key of FISH_KINDS)
 
 # Movement Variables
 var bar_velocity: float = 8.0               # Current vertical velocity of the bar
@@ -124,10 +132,10 @@ func reveal() -> void:
 	Called when the player begins a fishing encounter.
 	"""
 	# Select a random fish type from available options
-	fish_enum = Enum.Fish.values().pick_random()
+	fish_kind = FISH_KINDS.keys().pick_random()
 	
 	# Load fish-specific data
-	var fish_data: Dictionary = Data.FISH_DATA[fish_enum]
+	var fish_data: Dictionary = FISH_KINDS[fish_kind]
 	
 	# Apply fish properties
 	$FishSprite.texture = load(fish_data["icon_texture"])
