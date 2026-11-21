@@ -7,6 +7,8 @@ signal opened
 signal closed
 
 const GROUP := &"UIScreen"
+## Group of the HUD, told (refresh_screen_state) whenever a screen opens or closes.
+const HUD_GROUP := &"HUD"
 
 ## Start hidden (the usual case for screens instanced into a HUD).
 @export var start_closed: bool = true
@@ -39,6 +41,7 @@ func open() -> void:
 	_opened_frame = Engine.get_process_frames()
 	show()
 	_grab_initial_focus()
+	get_tree().call_group(HUD_GROUP, &"refresh_screen_state")
 	opened.emit()
 
 
@@ -51,6 +54,7 @@ func close() -> void:
 	var focused := get_viewport().gui_get_focus_owner()
 	if focused and is_ancestor_of(focused):
 		focused.release_focus()
+	get_tree().call_group(HUD_GROUP, &"refresh_screen_state")
 	closed.emit()
 
 

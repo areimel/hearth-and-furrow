@@ -1,0 +1,82 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://scripts/ui/hud_clock_card.gd" id="2_card"]
+[ext_resource type="Script" path="res://scripts/ui/hud_purse.gd" id="3_purse"]
+[ext_resource type="Script" path="res://scripts/ui/hud_hotbar.gd" id="4_bar"]
+[ext_resource type="PackedScene" path="res://scenes/ui/kit/prompt.tscn" id="5_prompt"]
+[ext_resource type="PackedScene" path="res://scenes/ui/kit/toasts.tscn" id="6_toasts"]
+
+[node name="HUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_hud")
+
+[node name="Shown" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopRight" type="VBoxContainer" parent="Shown"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -4.0
+offset_top = 4.0
+offset_right = -4.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Clock" type="PanelContainer" parent="Shown/TopRight"]
+layout_mode = 2
+size_flags_horizontal = 8
+script = ExtResource("2_card")
+
+[node name="Purse" type="PanelContainer" parent="Shown/TopRight"]
+layout_mode = 2
+size_flags_horizontal = 8
+script = ExtResource("3_purse")
+
+[node name="Bottom" type="VBoxContainer" parent="Shown"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 1
+alignment = 2
+
+[node name="ItemName" type="Label" parent="Shown/Bottom"]
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+horizontal_alignment = 1
+
+[node name="Hotbar" type="PanelContainer" parent="Shown/Bottom"]
+layout_mode = 2
+script = ExtResource("4_bar")
+
+[node name="Prompt" parent="Shown" instance=ExtResource("5_prompt")]
+layout_mode = 1
+
+[node name="Toasts" parent="." instance=ExtResource("6_toasts")]
+layout_mode = 1
+from_left = true
+
+[node name="PickupTimer" type="Timer" parent="."]
+one_shot = true

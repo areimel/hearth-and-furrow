@@ -12,12 +12,20 @@ const GROUP := &"Toasts"
 @export var fade_time: float = 0.4
 ## Oldest toasts are dropped beyond this many.
 @export var max_visible: int = 4
+## Stack in the top-left corner instead of the top-right.
+@export var from_left: bool = false
 
 @onready var _stack: VBoxContainer = $Stack
 
 
 func _ready() -> void:
 	add_to_group(GROUP)
+	if from_left:
+		_stack.anchor_left = 0.0
+		_stack.anchor_right = 0.0
+		_stack.offset_left = 4.0
+		_stack.offset_right = 4.0
+		_stack.grow_horizontal = Control.GROW_DIRECTION_END
 
 
 ## Find the Toasts node in `tree` and push a message; does nothing if absent.
@@ -25,6 +33,11 @@ static func show_message(tree: SceneTree, text: String, icon: Texture2D = null) 
 	var toasts := tree.get_first_node_in_group(GROUP) as Toast
 	if toasts:
 		toasts.push(text, icon)
+
+
+## Number of toasts currently stacked.
+func message_count() -> int:
+	return _stack.get_child_count()
 
 
 ## Add a toast with optional icon; it removes itself after hold_time + fade_time.

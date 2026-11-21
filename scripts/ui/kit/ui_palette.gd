@@ -16,3 +16,7 @@ const GOLD := Color("f2c14e")
 const MOSS := Color("5d8a3a")
 const CRIMSON := Color("b03a2e")
 const SHADOW := Color(0, 0, 0, 0.35)
+## Cool tones for weather and winter icons.
+const FROST := Color("dbe8ec")
+const SKY := Color("6f9bb8")
+const SLATE := Color("5a6470")
