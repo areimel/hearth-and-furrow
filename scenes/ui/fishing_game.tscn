@@ -24,7 +24,7 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 
 [node name="NinePatchRect" type="NinePatchRect" parent="Control" unique_id=1729367871]
-custom_minimum_size = Vector2(20, 100)
+custom_minimum_size = Vector2(20, 64)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -38,12 +38,14 @@ patch_margin_right = 5
 patch_margin_bottom = 20
 
 [node name="TextureProgressBar" type="TextureProgressBar" parent="Control" unique_id=219840803]
-custom_minimum_size = Vector2(10, 80)
+custom_minimum_size = Vector2(10, 48)
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 40.0
+offset_left = 24.0
+offset_top = 8.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
 fill_mode = 3
