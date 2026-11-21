@@ -22,10 +22,12 @@ func _ready() -> void:
 	SaveManager.register(&"relationships", self)
 
 
+## Friendship points, 0..MAX_POINTS.
 func points(npc_id: StringName) -> int:
 	return _points.get(npc_id, 0)
 
 
+## Whole hearts, 0..Balance.MAX_HEARTS.
 func hearts(npc_id: StringName) -> int:
 	return floori(points(npc_id) / float(Balance.POINTS_PER_HEART))
 
@@ -53,6 +55,7 @@ func talk(npc_id: StringName) -> bool:
 	return true
 
 
+## Already counted a conversation with this villager today.
 func talked_today(npc_id: StringName) -> bool:
 	return _talked_today.has(npc_id)
 
@@ -62,6 +65,7 @@ func has_met(npc_id: StringName) -> bool:
 	return _met.has(npc_id)
 
 
+## Already gave this villager a gift today.
 func gifted_today(npc_id: StringName) -> bool:
 	return _gifted_today.has(npc_id)
 
@@ -93,6 +97,7 @@ func begin_day(_day: int) -> void:
 	_gifted_today.clear()
 
 
+## Forget everything (new game).
 func reset() -> void:
 	_points.clear()
 	_met.clear()
@@ -100,11 +105,13 @@ func reset() -> void:
 	_gifted_today.clear()
 
 
+## Save section: points, met, and today's talk and gift flags.
 func to_dict() -> Dictionary:
 	return {"points": _points.duplicate(), "met": _met.keys(),
 		"talked_today": _talked_today.keys(), "gifted_today": _gifted_today.keys()}
 
 
+## Restore from to_dict() output; tolerates {} and missing keys.
 func from_dict(data: Dictionary) -> void:
 	reset()
 	var saved_points: Dictionary = data.get("points", {})
