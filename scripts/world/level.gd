@@ -12,7 +12,7 @@ const PREVIEW_TINT := Color(1, 1, 1, 0.59)
 @onready var day_cycle: DayCycle = $DayCycle
 @onready var sky: WorldSky = $Sky
 @onready var build_mode: BuildMode = $BuildMode
-@onready var _preview: Sprite2D = $Overlay/PreviewMachineSprite2D
+@onready var _preview: Sprite2D = $Overlay/PlacementPreview
 @onready var _prompt: Prompt = $Overlay/CanvasLayer/HUD/GameHud/Shown/Prompt
 var _focused: Interactable
 @onready var _target_info: Label = $Overlay/CanvasLayer/HUD/TargetInfo
@@ -24,6 +24,10 @@ func _ready() -> void:
 	player.interact_focus_changed.connect(_on_interact_focus_changed)
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	InputGlyphs.controller_connected = Input.get_connected_joypads().size() > 0
+	# Features start in tree order, so each can rely on the ones above it having claimed ground.
+	for child in get_children():
+		if child is LevelFeature:
+			(child as LevelFeature).start()
 
 
 func _on_joy_connection_changed(_device_id: int, connected: bool) -> void:
@@ -42,7 +46,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
-	GameClock.set_paused(UIScreen.any_open(get_tree()) or day_cycle.busy)
+	GameClock.set_paused(day_cycle.busy or (UIScreen.any_open(get_tree())
+			and GameSettings.instance(get_tree()).get_value(&"pause_in_menus", true)))
 	_update_target_readout()
 	if _preview.visible:  # bottom-left aligned, like a placed Station's sprite
 		_preview.position = Vector2(target_cell() * Balance.TILE_SIZE) \
@@ -138,7 +143,8 @@ func _sow(cell: Vector2i) -> void:
 	if crop_data == null or not farm_grid.is_tool_valid(PlayerActions.SOW, cell):
 		return
 	if Inventory.remove(seed_item.id, 1):
-		farm_grid.crop_field.sow(cell, crop_data.id)
+		if farm_grid.crop_field.sow(cell, crop_data.id) != null:
+			Progress.record(&"sowed", crop_data.id, 1)
 
 
 ## Call hit(tool, dir, tier) on every Axe_able object within reach in front of the player.
@@ -191,22 +197,12 @@ func _update_target_readout() -> void:
 
 
 # ---------------------------------------------------------------- build placement
-# Entry points for the build/placement system (stations, coops, ...): it picks a scene
-# from the inventory, shows a preview, and places at the cell in front of the player.
+# Entry points for the build/placement system: it shows a preview and checks the cell in
+# front of the player.
 
 ## Whether a Placeable may be built on the cell in front of the player.
 func can_place_at_target() -> bool:
 	return farm_grid.is_buildable(target_cell())
-
-
-## Instantiate `scene` (root must be a Placeable) on the target cell under stations().
-## Returns the new Placeable, or null when the cell is not free.
-func place_at_target(scene: PackedScene) -> Placeable:
-	if not can_place_at_target():
-		return null
-	var placeable: Placeable = scene.instantiate()
-	placeable.setup(target_cell(), self, stations())
-	return placeable
 
 
 ## Show a `tint`ed (default half-transparent) `texture` on the target cell until

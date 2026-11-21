@@ -1,44 +1,43 @@
-class_name PlayerState extends Node
-## Save provider `player`: what the farmer owns that matters across days. Position is
-## deliberately not saved (you always wake at the bed) and the hotbar selection already
-## lives in Inventory, so this is only the target-highlighter toggle. GameSession adds one
-## to the Level when a session starts; it registers itself like any scene-owned service.
+class_name PlayerState extends LevelFeature
+## Save provider `player`: what the farmer carries across sessions besides the pack:
+## the target-highlighter toggle, where they stand and which way they face. The hotbar
+## selection already lives in Inventory. A new game keeps the spawn point from the scene.
 
-const SAVE_KEY := &"player"
-
-## Last value applied or read; waits here until a Player exists to receive it.
+## Last value applied or read.
 var highlighter_on: bool = false
 
 
-func _ready() -> void:
-	SaveManager.register(SAVE_KEY, self)
-
-
-func _exit_tree() -> void:
-	if SaveManager.is_registered(SAVE_KEY):
-		SaveManager.unregister(SAVE_KEY)
-
-
+## Snapshot: highlighter, position (pixels) and facing direction.
 func to_dict() -> Dictionary:
-	var player := _player()
-	if player:
-		highlighter_on = player.highlighter_on
-	return {"highlighter_on": highlighter_on}
+	if level == null or level.player == null:
+		return {"highlighter_on": highlighter_on}
+	var player := level.player
+	highlighter_on = player.highlighter_on
+	return {"highlighter_on": highlighter_on, "pos": [player.position.x, player.position.y],
+			"facing": [player.animation_direction.x, player.animation_direction.y]}
 
 
-func from_dict(data: Dictionary) -> void:
+func _restore(data: Dictionary) -> void:
 	highlighter_on = bool(data.get("highlighter_on", false))
-	var player := _player()
-	if player:
-		player.highlighter_on = highlighter_on
+	var player := level.player
+	player.highlighter_on = highlighter_on
+	if data.has("pos"):
+		var pos: Array = data["pos"]
+		player.position = Vector2(float(pos[0]), float(pos[1]))
+	if data.has("facing"):
+		var facing: Array = data["facing"]
+		_face(player, Vector2(float(facing[0]), float(facing[1])))
 
 
-func reset() -> void:
-	from_dict({})
+func _new_game_setup() -> void:
+	_restore({})
 
 
-func _player() -> Player:
-	if not is_inside_tree():
-		return null
-	var level := get_tree().get_first_node_in_group(&"Level") as Level
-	return level.player if level else null
+## Turn the player to `dir` the way walking does: target direction plus every blend position.
+func _face(player: Player, dir: Vector2) -> void:
+	player.animation_direction = dir
+	var anim_tree := player.get_node("Animation/AnimationTree") as AnimationTree
+	for path: String in ["StateMachine/idle", "StateMachine/walk", "FishIdleBlendSpace2D"]:
+		anim_tree.set("parameters/%s/blend_position" % path, dir)
+	for animation: StringName in PlayerActions.ANIMATIONS.values():
+		anim_tree.set("parameters/ToolStateMachine/%s/blend_position" % animation, dir)

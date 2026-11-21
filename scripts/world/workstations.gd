@@ -1,4 +1,4 @@
-class_name Workstations extends Node
+class_name Workstations extends LevelFeature
 ## Feature root for crafting stations. Add scenes/world/workstations.tscn as a child of
 ## Level: it spawns Stations into level.stations(), lays out a starter yard of
 ## Balance.STARTER_STATIONS on a new game (the rest are built, see BuildMode), saves them
@@ -18,21 +18,8 @@ const YARD_SPACING := 2
 ## Largest ring searched around the anchor.
 @export var search_radius: int = 30
 
-var _level: Level
 var _stations: Array[Station] = []
 var _screen: CraftingScreen
-var _pending: Dictionary = {}  # a save section delivered before _bind() ran
-var _has_pending: bool = false
-
-
-func _ready() -> void:
-	SaveManager.register(&"stations", self)
-	_bind.call_deferred()
-
-
-func _exit_tree() -> void:
-	if SaveManager.is_registered(&"stations"):
-		SaveManager.unregister(&"stations")
 
 
 # ---------------------------------------------------------------- API
@@ -53,10 +40,10 @@ func station_at(cell: Vector2i) -> Station:
 ## Place a station of type `station_id` on `cell` (no cost, no free-cell check beyond
 ## the grid claiming it). Null if there is no level yet.
 func place(station_id: StringName, cell: Vector2i) -> Station:
-	if _level == null:
+	if level == null:
 		return null
 	var station := Station.create(station_id)
-	station.setup(cell, _level, _level.stations())
+	station.setup(cell, level, level.stations())
 	station.interaction_requested.connect(_open_screen)
 	station.tree_exited.connect(_forget.bind(station))
 	_stations.append(station)
@@ -76,24 +63,17 @@ func remove(cell: Vector2i) -> bool:
 ## True if the Inventory holds the station's build cost.
 func can_afford_build(station_id: StringName) -> bool:
 	var row := Content.station(station_id)
-	if row == null:
-		return false
-	for id: StringName in row.build_cost:
-		if not Inventory.has(id, int(row.build_cost[id])):
-			return false
-	return true
+	return row != null and Loot.has_all(row.build_cost)
 
 
 ## Pay the build cost and place the station; null if unaffordable or the cell is
 ## not buildable (water, house, tilled, planted or otherwise occupied).
 func build(station_id: StringName, cell: Vector2i) -> Station:
-	if _level == null or not can_afford_build(station_id):
+	if level == null or not can_afford_build(station_id):
 		return null
-	if not _level.farm_grid.is_buildable(cell):
+	if not level.farm_grid.is_buildable(cell):
 		return null
-	var row := Content.station(station_id)
-	for id: StringName in row.build_cost:
-		Inventory.remove(id, int(row.build_cost[id]))
+	Loot.take(Content.station(station_id).build_cost)
 	return place(station_id, cell)
 
 
@@ -127,13 +107,8 @@ func to_dict() -> Dictionary:
 	return {"stations": list}
 
 
-## Replace all stations with the saved ones.
-func from_dict(data: Dictionary) -> void:
-	if _level == null:
-		_pending = data
-		_has_pending = true
-		return
-	_clear()
+## Place the saved stations.
+func _restore(data: Dictionary) -> void:
 	for entry: Dictionary in data.get("stations", []):
 		var id := StringName(entry.get("id", ""))
 		var cell: Vector2i = entry.get("cell", Vector2i.ZERO)
@@ -144,26 +119,13 @@ func from_dict(data: Dictionary) -> void:
 			station.from_dict(entry)
 
 
-## New game: drop everything and lay out the starter yard again.
-func reset() -> void:
-	_has_pending = false
-	_clear()
-	if _level and starter_yard:
+## New game: lay out the starter yard.
+func _new_game_setup() -> void:
+	if starter_yard:
 		_place_starter_yard()
 
 
 # ---------------------------------------------------------------- internals
-
-func _bind() -> void:
-	_level = get_parent() as Level
-	if _level == null:
-		_level = get_tree().get_first_node_in_group("Level") as Level
-	if _level and _has_pending:
-		_has_pending = false
-		from_dict(_pending)
-	elif _level and _stations.is_empty() and starter_yard:
-		_place_starter_yard()
-
 
 func _clear() -> void:
 	for station in _stations.duplicate():
@@ -183,18 +145,14 @@ func _place_starter_yard() -> void:
 	for id in Balance.STARTER_STATIONS:
 		var cell := origin + Vector2i(i % YARD_COLUMNS, i / YARD_COLUMNS) * YARD_SPACING
 		if not _usable(cell):
-			cell = _nearest_free(cell)
+			cell = GridSearch.nearest(cell, search_radius, _usable)
 		place(id, cell)
 		i += 1
 
 
 ## Nearest block origin to the anchor where every yard cell is usable.
 func _find_origin(rows: int) -> Vector2i:
-	for radius in search_radius + 1:
-		for cell in _ring(anchor_cell, radius):
-			if _block_usable(cell, rows):
-				return cell
-	return anchor_cell
+	return GridSearch.nearest(anchor_cell, search_radius, _block_usable.bind(rows))
 
 
 func _block_usable(origin: Vector2i, rows: int) -> bool:
@@ -205,37 +163,13 @@ func _block_usable(origin: Vector2i, rows: int) -> bool:
 	for y in (rows - 1) * YARD_SPACING + 1:
 		for x in (YARD_COLUMNS - 1) * YARD_SPACING + 1:
 			var cell := origin + Vector2i(x, y)
-			if _level.farm_grid.is_water(cell) or _level.farm_grid.is_tilled(cell):
+			if level.farm_grid.is_water(cell) or level.farm_grid.is_tilled(cell):
 				return false
 	return true
 
 
-func _nearest_free(from: Vector2i) -> Vector2i:
-	for radius in search_radius + 1:
-		for cell in _ring(from, radius):
-			if _usable(cell):
-				return cell
-	return from
-
-
 func _usable(cell: Vector2i) -> bool:
-	var grid := _level.farm_grid
-	return grid.is_buildable(cell)
-
-
-## Cells at Chebyshev distance `radius` from `center`, nearest-to-axis order not needed.
-func _ring(center: Vector2i, radius: int) -> Array[Vector2i]:
-	var out: Array[Vector2i] = []
-	if radius == 0:
-		out.append(center)
-		return out
-	for d in range(-radius, radius + 1):
-		out.append(center + Vector2i(d, -radius))
-		out.append(center + Vector2i(d, radius))
-		if absi(d) != radius:
-			out.append(center + Vector2i(-radius, d))
-			out.append(center + Vector2i(radius, d))
-	return out
+	return level.farm_grid.is_buildable(cell)
 
 
 # ---------------------------------------------------------------- crafting screen

@@ -23,6 +23,7 @@
 [ext_resource type="PackedScene" path="res://scenes/world/villagers.tscn" id="wired_villagers"]
 [ext_resource type="Script" path="res://scripts/world/build_mode.gd" id="build_mode_script"]
 [ext_resource type="Script" path="res://scripts/world/tree_grove.gd" id="tree_grove_script"]
+[ext_resource type="Script" path="res://scripts/world/player_state.gd" id="player_state_script"]
 [ext_resource type="PackedScene" path="res://scenes/ui/crafting_screen.tscn" id="wired_craftingscreen"]
 [ext_resource type="PackedScene" path="res://scenes/ui/dialogue_box.tscn" id="wired_dialoguebox"]
 [ext_resource type="PackedScene" path="res://scenes/world/foraging.tscn" id="wired_foraging"]
@@ -2359,6 +2360,7 @@ script = ExtResource("1_urvlt")
 
 [node name="FarmGrid" type="Node" parent="." unique_id=1730416281 node_paths=PackedStringArray("ground_layer", "soil_layer", "wet_layer", "target_layer", "house", "crop_field")]
 script = ExtResource("farm_grid_script")
+save_key = &"farm"
 ground_layer = NodePath("../Layers/WaterGrassLayer")
 soil_layer = NodePath("../Layers/SoilLayer")
 wet_layer = NodePath("../Layers/WetSoilLayer")
@@ -2499,9 +2501,6 @@ position = Vector2(145, -233)
 position = Vector2(-44, -156)
 
 [node name="tree20" parent="Objects/Trees" unique_id=263282183 instance=ExtResource("9_7pb6i")]
-position = Vector2(-316, 178)
-
-[node name="tree21" parent="Objects/Trees" unique_id=637452369 instance=ExtResource("9_7pb6i")]
 position = Vector2(-316, 178)
 
 [node name="tree22" parent="Objects/Trees" unique_id=2022987018 instance=ExtResource("9_7pb6i")]
@@ -2823,7 +2822,7 @@ lifetime = 2.0
 visibility_rect = Rect2(-600, -400, 1200, 810)
 process_material = SubResource("ParticleProcessMaterial_mq31s")
 
-[node name="PreviewMachineSprite2D" type="Sprite2D" parent="Overlay" unique_id=386698021]
+[node name="PlacementPreview" type="Sprite2D" parent="Overlay" unique_id=386698021]
 visible = false
 modulate = Color(1, 1, 1, 0.5921569)
 texture = ExtResource("15_mq31s")
@@ -2872,6 +2871,10 @@ workstations = NodePath("../Workstations")
 [node name="QuestGiver" parent="." instance=ExtResource("wired_questgiver")]
 
 [node name="FestivalDirector" parent="." instance=ExtResource("wired_festivaldirector")]
+
+[node name="PlayerState" type="Node" parent="."]
+script = ExtResource("player_state_script")
+save_key = &"player"
 
 [connection signal="do_action" from="Objects/Player" to="." method="_on_player_do_action"]
 [connection signal="tool_use" from="Objects/Player" to="." method="_on_player_tool_use"]

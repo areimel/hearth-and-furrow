@@ -4,3 +4,4 @@
 
 [node name="Workstations" type="Node"]
 script = ExtResource("1_ws")
+save_key = &"stations"

@@ -1,4 +1,4 @@
-class_name FarmGrid extends Node
+class_name FarmGrid extends LevelFeature
 ## Owns everything about the tile grid: terrain queries, tilled/wet soil,
 ## cell occupancy (crops and placeables), the crop field and the target highlight.
 ## Cells are Vector2i grid coordinates, cell = floor(world_pos / Balance.TILE_SIZE).
@@ -17,12 +17,13 @@ const WET_VARIANTS := 3
 @export var house: Node2D  ## Needs is_point_inside_house(cell: Vector2).
 @export var crop_field: CropField  ## Owns the planted crops; resolved each evening.
 
+var _village: Village  ## Found by group on first use; its walkable cells are land, not terrain.
 var _occupants: Dictionary = {}  # Vector2i -> Node (untyped: entries may be freed)
 var _last_dir: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
-	SaveManager.register(&"farm", self)
+	super()
 	GameClock.day_ending.connect(_on_day_ending)
 	GameClock.day_passed.connect(_on_day_passed)
 
@@ -43,15 +44,30 @@ func get_target_grid(pos: Vector2, dir: Vector2) -> Vector2i:
 	return cell_of(pos) + Vector2i(dir)
 
 
-## True if the ground tile is water.
+## True if the cell is open water. The farm's sea tiles run under the village, so cells in
+## the village's walkable area are land (never water, farmable, buildable or fishable).
 func is_water(cell: Vector2i) -> bool:
 	var data := ground_layer.get_cell_tile_data(cell)
-	return data != null and data.get_custom_data("water")
+	return data != null and data.get_custom_data("water") and not in_village(cell)
 
 
 func is_farmable(cell: Vector2i) -> bool:
 	var data := ground_layer.get_cell_tile_data(cell)
-	return data != null and data.get_custom_data("farmable")
+	return data != null and data.get_custom_data("farmable") and not in_village(cell)
+
+
+## True if `cell` lies on the village's walkable ground (the street, the green, the gate).
+func in_village(cell: Vector2i) -> bool:
+	if _village == null or not is_instance_valid(_village):
+		_village = get_tree().get_first_node_in_group(&"Village") as Village
+	return _village != null and _village.is_cell_walkable(cell)
+
+
+## True if the player could stand on the farm cell: ground without water or a collision shape.
+func is_walkable_land(cell: Vector2i) -> bool:
+	var data := ground_layer.get_cell_tile_data(cell)
+	return data != null and not is_water(cell) and not in_village(cell) \
+			and data.get_collision_polygons_count(0) == 0
 
 
 # ---------------------------------------------------------------- soil
@@ -123,7 +139,7 @@ func is_occupied(cell: Vector2i) -> bool:
 func is_free_for_placement(cell: Vector2i) -> bool:
 	if _in_house(cell) or is_occupied(cell) or is_object_near_cell(cell):
 		return false
-	return ground_layer.get_cell_tile_data(cell) != null and not is_water(cell)
+	return ground_layer.get_cell_tile_data(cell) != null and not is_water(cell) and not in_village(cell)
 
 
 ## Whether a station or other structure may be built on `cell`: free for placement and
@@ -217,45 +233,26 @@ func clear_highlight() -> void:
 
 ## The `farm` save section: tilled and wet cells as [x, y] pairs, plus every crop.
 func to_dict() -> Dictionary:
-	return {"tilled": _cells_to_pairs(tilled_cells()), "wet": _cells_to_pairs(wet_cells()),
+	return {"tilled": GridSearch.cells_to_pairs(tilled_cells()), "wet": GridSearch.cells_to_pairs(wet_cells()),
 			"crops": crop_field.to_dict()}
 
 
 ## Restore from to_dict() output (replaces soil and crops). Accepts `{}`.
-func from_dict(data: Dictionary) -> void:
+func _restore(data: Dictionary) -> void:
 	soil_layer.clear()
 	wet_layer.clear()
-	var tilled := _pairs_to_cells(data.get("tilled", []))
+	var tilled := GridSearch.pairs_to_cells(data.get("tilled", []))
 	if not tilled.is_empty():
 		soil_layer.set_cells_terrain_connect(tilled, SOIL_TERRAIN_SET, SOIL_TERRAIN)
-	for cell in _pairs_to_cells(data.get("wet", [])):
+	for cell in GridSearch.pairs_to_cells(data.get("wet", [])):
 		water(cell)
 	crop_field.from_dict(data.get("crops", []))
 
 
 ## New game: bare soil and no crops.
-func reset() -> void:
-	from_dict({})
-
-
-func _exit_tree() -> void:
-	if SaveManager.is_registered(&"farm"):
-		SaveManager.unregister(&"farm")
+func _new_game_setup() -> void:
+	_restore({})
 
 
 func _in_house(cell: Vector2i) -> bool:
 	return house != null and house.is_point_inside_house(Vector2(cell))
-
-
-static func _cells_to_pairs(cells: Array[Vector2i]) -> Array:
-	var pairs: Array = []
-	for cell in cells:
-		pairs.append([cell.x, cell.y])
-	return pairs
-
-
-static func _pairs_to_cells(pairs: Array) -> Array[Vector2i]:
-	var cells: Array[Vector2i] = []
-	for pair: Array in pairs:
-		cells.append(Vector2i(int(pair[0]), int(pair[1])))
-	return cells

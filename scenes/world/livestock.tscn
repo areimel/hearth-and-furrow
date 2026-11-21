@@ -2,5 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/world/livestock.gd" id="1_live"]
 
-[node name="Livestock" type="Node2D"]
+[node name="Livestock" type="Node"]
 script = ExtResource("1_live")
+save_key = &"livestock"

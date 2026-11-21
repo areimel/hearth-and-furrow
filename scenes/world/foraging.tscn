@@ -2,5 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/world/foraging.gd" id="1_forage"]
 
-[node name="Foraging" type="Node2D"]
+[node name="Foraging" type="Node"]
 script = ExtResource("1_forage")
+save_key = &"foraging"
