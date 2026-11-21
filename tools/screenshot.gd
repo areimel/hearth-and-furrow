@@ -12,7 +12,7 @@ extends Node
 ##   --name NAME    file name without extension (default "shot")
 ##   --size WxH     window size, e.g. 1280x800 (default: project default)
 ##   --setup STEPS  comma-separated setup steps run once the scene is up, in order:
-##                  fishing | rain | storm | night | plants (sow all six crops) | days:N | menu | <method on the scene>
+##                  fishing | rain | storm | night | plants (sow all six crops under the player) | highlight | days:N | menu | <method on the scene>
 ##   --upscale N    also write NAME_xN.png, nearest-neighbour enlarged (default 4; 1 = off)
 ## The raw PNG is the base-resolution viewport (320x180, or 320x200 on 16:10 windows).
 
@@ -75,9 +75,13 @@ func _run_setup(step: String, scene: Node) -> void:
 			var level := scene as Level
 			if level:
 				for i in 6:
-					var cell := Vector2i(10 + i, -8)
+					var cell := Vector2i(9 + i, -8)
 					level.farm_grid.till(cell)
 					level.farm_grid.crop_field.sow(cell, Content.crops()[i].id)
+		"highlight":
+			var level := scene as Level
+			if level:
+				level.player.highlighter_on = true
 		"menu":
 			if scene.has_method("open"):
 				scene.open()

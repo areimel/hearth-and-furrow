@@ -153,3 +153,20 @@ Never call `advance_day()` from inside a `day_ending`/`day_passed` handler.
   ints and typed arrays survive exactly (`JSON.from_native`); still cast with `int()` defensively.
 - File: `{"save_version", "saved_at", "sections": {key: dict}}`. Missing section → `reset()`.
   Changing a section's shape: bump `SAVE_VERSION` and add a `match` case in `_migrate()`.
+
+## World services (scene-owned; additions by the core-loop branch)
+- The legacy `Enum`/`Data` autoloads are gone: tile size, player speed and tree health live in `Balance`.
+- **Level** (group `Level`): `farm_grid`, `player`, `day_cycle`, `sky`, `crops() animals() stations() npcs() gatherables()`,
+  `target_cell()`, `can_place_at_target()`, `place_at_target(scene) -> Placeable`,
+  `show_placement_preview(texture)`, `hide_placement_preview()`.
+- **DayCycle** (group `DayCycle`): `end_day(passed_out := false)` (the only entry for bed/pass-out), `busy`,
+  `DayCycle.is_transitioning(tree)`, signals `transition_started`, `transition_finished`.
+- **WorldSky**: `base_tint(progress) -> Color` is the hook for seasonal palettes; `is_raining()`.
+- **FarmGrid** (save key `farm`: `tilled`, `wet`, `crops`): `is_tool_valid(action, cell)` where action is a
+  `G.ToolKind` or `PlayerActions.SOW`; `crop_field: CropField`.
+- **CropField**: `sow(cell, crop_id) -> Crop`, `crop_at(cell)`, `crops()`, `ripe_crops()`, `reap(cell) -> int`,
+  `remove(cell)`, `resolve_day()`. **Crop**: `crop_id age weeds blighted is_ripe() is_flattened() flatten()
+  clear_weeds() yield_amount() info_text() to_dict() from_dict()`.
+- **Loot.give(tree, item_id, amount, verb) -> int**: Inventory + Progress + toast ("Pack is full" on overflow).
+- **Player**: `input_locked`, `highlighter_on`, `action_item`, signal `interact_focus_changed(Interactable)`.
+  An Interactable's prompt text is metadata `prompt_text` on it or its parent (default "Use").
