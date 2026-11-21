@@ -1,0 +1,28 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/station.gd" id="1_station"]
+[ext_resource type="PackedScene" uid="uid://c7ntrjx4q0k8e" path="res://scenes/components/interactable.tscn" id="2_int"]
+
+[node name="Station" type="StaticBody2D"]
+collision_layer = 132
+collision_mask = 0
+script = ExtResource("1_station")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+centered = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="Interactable" parent="." instance=ExtResource("2_int")]
+
+[node name="OutputIcon" type="Sprite2D" parent="."]
+visible = false
+z_index = 2
+scale = Vector2(0.75, 0.75)
+
+[node name="NameLabel" type="Label" parent="."]
+visible = false
+z_index = 3
+theme_type_variation = &"HudLabel"
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
