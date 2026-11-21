@@ -22,6 +22,19 @@ func _done() -> void:
 	_made.clear()
 
 
+func test_prompt_says_open_then_collect() -> void:
+	var quern := await _station(&"quern")
+	var pad: Interactable = quern.get_node("Interactable")
+	eq(pad.prompt_text, "Open " + quern.display_name(), "open prompt")
+	quern.output = {&"flour": 1}
+	quern.changed.emit()
+	quern._update_visuals()
+	eq(pad.prompt_text, "Collect", "collect prompt with output waiting")
+	check(quern.collect(), "collected")
+	eq(pad.prompt_text, "Open " + quern.display_name(), "back to open")
+	_done()
+
+
 func test_timed_job_consumes_ticks_and_collects() -> void:
 	var quern := await _station(&"quern")
 	Inventory.add(&"grain", 4)

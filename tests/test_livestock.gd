@@ -70,6 +70,18 @@ func test_prompt_verbs() -> void:
 	_cleanup()
 
 
+func test_interactable_prompt_follows_the_animal() -> void:
+	var cow := _animal(&"cow")
+	var pad: Interactable = cow.get_node("Interactable")
+	eq(pad.prompt_text, "Pet", "idle prompt published")
+	cow.end_day(_spring())
+	eq(pad.prompt_text, "Milk", "prompt updates to Milk, not a stale Pet")
+	cow.pet()
+	cow.collect()
+	check(not pad.enabled, "nothing to do disables the interactable")
+	_cleanup()
+
+
 func test_feed_consumes_item_and_sets_fed() -> void:
 	var cow := _animal(&"cow")
 	check(not cow.feed(), "nothing to feed with")

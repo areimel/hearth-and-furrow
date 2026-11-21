@@ -8,14 +8,16 @@ const PACK_FULL := "Your pack is full"
 
 
 ## Give `amount` of `item_id`, record `Progress.record(verb, item_id, added)` and toast.
-## `verb` is one of Progress's verbs (&"harvested", &"gathered", &"caught", ...).
+## `verb` is one of Progress's verbs (&"harvested", &"gathered", &"caught", ...); an empty
+## verb (rewards, favours) records nothing.
 ## Returns how many items were actually added.
 static func give(tree: SceneTree, item_id: StringName, amount: int, verb: StringName) -> int:
 	var leftover := Inventory.add(item_id, amount)
 	var added := amount - leftover
 	var item := Content.item(item_id)
 	if added > 0:
-		Progress.record(verb, item_id, added)
+		if verb != &"":
+			Progress.record(verb, item_id, added)
 		Toast.show_message(tree, "+%d %s" % [added, item.display_name], item.icon)
 	if leftover > 0:
 		Toast.show_message(tree, PACK_FULL)
@@ -24,17 +26,26 @@ static func give(tree: SceneTree, item_id: StringName, amount: int, verb: String
 
 ## True if the pack holds every `{item_id: count}` in `cost`.
 static func has_all(cost: Dictionary) -> bool:
-	return shortfall(cost) == ""
+	return missing(cost).is_empty()
+
+
+## What the pack still lacks of `cost` as `{item_id: shortfall}` (empty when it holds it all).
+static func missing(cost: Dictionary) -> Dictionary:
+	var out: Dictionary = {}
+	for id: StringName in cost:
+		var lacking: int = int(cost[id]) - Inventory.count(id)
+		if lacking > 0:
+			out[id] = lacking
+	return out
 
 
 ## What is still missing from `cost` as text ("Need 2 Stone, 1 Clay"), or "" if nothing.
 static func shortfall(cost: Dictionary) -> String:
-	var missing: Array[String] = []
-	for id: StringName in cost:
-		var lacking: int = int(cost[id]) - Inventory.count(id)
-		if lacking > 0:
-			missing.append("%d %s" % [lacking, Content.item(id).display_name])
-	return "" if missing.is_empty() else "Need " + ", ".join(missing)
+	var lacking := missing(cost)
+	var parts: Array[String] = []
+	for id: StringName in lacking:
+		parts.append("%d %s" % [lacking[id], Content.item(id).display_name])
+	return "" if parts.is_empty() else "Need " + ", ".join(parts)
 
 
 ## Remove every `{item_id: count}` in `cost` from the pack. All or nothing.

@@ -4,7 +4,6 @@
 [ext_resource type="PackedScene" path="res://scenes/components/interactable.tscn" id="2_int"]
 
 [node name="FeastTable" type="Node2D"]
-metadata/prompt_text = "Feast table"
 
 [node name="Sprite" type="Sprite2D" parent="."]
 texture = ExtResource("1_tex")
@@ -12,3 +11,4 @@ offset = Vector2(0, -6)
 
 [node name="Interactable" parent="." instance=ExtResource("2_int")]
 position = Vector2(0, -4)
+prompt_text = "Feast table"

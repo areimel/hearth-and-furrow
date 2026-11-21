@@ -111,14 +111,16 @@ func test_greeting_and_eve_options() -> void:
 	_make_director(G.Season.SPRING, 19, 10)
 	var may: Dictionary = FeastLines.LINES[&"may_day"]
 	check(may["opt_eve"] in stub.offered(&"reeve"), "reeve mentions tomorrow's feast")
-	check(not may["opt_greet"] in stub.offered(&"miller"), "no greeting the day before")
+	eq((stub.line_provider.call(&"miller") as Array[String]).size(), 0, "no feast greeting the day before")
 	GameClock.advance_day()
 	check(not may["opt_eve"] in stub.offered(&"reeve"), "no eve option on the day")
 	GameClock.hour = 10
 	director.sync()
-	check(may["opt_greet"] in stub.offered(&"miller"), "feast greeting during the feast")
-	check(stub.choose(&"miller", may["opt_greet"]), "greet")
+	var greeting: Array[String] = stub.line_provider.call(&"miller")
+	check(not greeting.is_empty(), "feast greeting replaces the ordinary one")
 	check(director.ledger.attended(&"may_day", 1), "greeting counts as coming")
+	var keeper: Array[String] = stub.line_provider.call(Content.shops()[0].keeper)
+	check(keeper.has(FestivalTalk.SHOP_SHUT), "a shopkeeper says the shop is shut")
 	check(director.reaction(director.running(), 1).contains(": "), "a villager reacts")
 	_drop()
 

@@ -73,7 +73,7 @@ func test_depletes_and_regrows_through_day_ending() -> void:
 	var stone := _node(&"stone")
 	var row := Content.gatherable(&"stone")
 	check(_interactable(stone).enabled, "enabled while ready")
-	eq(_interactable(stone).get_meta(&"prompt_text"), "Gather stone", "prompt meta")
+	eq(_interactable(stone).prompt_text, "Gather stone", "prompt published")
 	check(stone.gather(), "gathered")
 	check(stone.depleted, "depleted")
 	check(not _interactable(stone).enabled, "interactable disabled")

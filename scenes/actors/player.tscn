@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b0mnopqlx5dix"]
 
-[ext_resource type="Script" uid="uid://dbmbhotl3mjb4" path="res://scripts/characters/player.gd" id="2_76oj4"]
+[ext_resource type="Script" uid="uid://dbmbhotl3mjb4" path="res://scripts/actors/player.gd" id="2_76oj4"]
 [ext_resource type="Texture2D" uid="uid://0vko1ybpl45s" path="res://graphics/characters/main/main_straw.png" id="2_eojnx"]
 [ext_resource type="PackedScene" uid="uid://rqbm035hv21n" path="res://scenes/ui/fishing_game.tscn" id="4_dyp2m"]
 [ext_resource type="AudioStream" uid="uid://dvtigt760l6wc" path="res://audio/axe.wav" id="5_eojnx"]

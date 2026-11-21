@@ -1,5 +1,6 @@
 class_name AppleTree extends StaticBody2D
-## A choppable apple tree. Axe hits knock apples down and wear it down; at zero health it
+## A choppable apple tree. Apples are picked by hand (its Interactable, "Pick apples", only
+## enabled while fruit hangs) without harm; axe hits only wear the tree down and at zero health it
 ## is felled: logs go to the player (Loot) and a stump stays. The stump regrows into a
 ## tree after Balance.TREE_REGROW_DAYS days, so wood is renewable. Apples regrow over
 ## evenings, but only in Balance.APPLE_SEASONS. Saved by TreeGrove.
@@ -16,6 +17,7 @@ var stump_days: int = 0
 
 var _color_tween: Tween
 
+@onready var _pick: Interactable = $Interactable
 @onready var _upper: Sprite2D = $FlashSprite2DUpper
 @onready var _bottom: Sprite2D = $FlashSprite2DBottom
 
@@ -23,6 +25,7 @@ var _color_tween: Tween
 func _ready() -> void:
 	_upper.frame = [0, 1, 1, 3].pick_random()
 	add_to_group("Tree")
+	_pick.interacted.connect(func(_player: Node) -> void: pick_apples())
 	GameClock.day_ending.connect(_on_day_ending)
 	_grow_apples()
 	_apply_felled()
@@ -38,6 +41,23 @@ func apple_count() -> int:
 	return $Apples.get_child_count()
 
 
+## Pick the ripe apples by hand, as many as fit in the pack: they go in via Loot (`gathered`)
+## and the tree is not hurt. Returns how many were taken (0 when felled, bare or the pack is full).
+func pick_apples() -> int:
+	if felled or apple_count() == 0:
+		return 0
+	var take := mini(apple_count(), Inventory.space_for(&"apple"))
+	if take == 0:
+		Toast.show_message(get_tree(), Loot.PACK_FULL)
+		return 0
+	for i in take:
+		var apple: Node = $Apples.get_children().pick_random()
+		$Apples.remove_child(apple)
+		apple.queue_free()
+	_pick.enabled = apple_count() > 0
+	return Loot.give(get_tree(), &"apple", take, &"gathered")
+
+
 ## Axe_able contract: `action` is a G.ToolKind; only the axe works. `tier` is the swung
 ## tool's ToolTierData (power per hit, bonus logs); null counts as the base tier.
 func hit(action: int, _direction: Vector2, tier: ToolTierData = null) -> void:
@@ -45,7 +65,6 @@ func hit(action: int, _direction: Vector2, tier: ToolTierData = null) -> void:
 		return
 	_upper.flash()
 	_bottom.flash()
-	_pick_apple()
 	health -= tier.power if tier else 1.0
 	if health <= 0.0:
 		fell(tier.bonus_logs if tier else 0)
@@ -115,15 +134,8 @@ func _apply_felled() -> void:
 		add_to_group("Axe_able")
 
 
-func _pick_apple() -> void:
-	if apple_count() > 0:
-		var apple: Node = $Apples.get_children().pick_random()
-		$Apples.remove_child(apple)
-		apple.queue_free()
-		Loot.give(get_tree(), &"apple", 1, &"gathered")
-
-
 func _show_apples(count: int) -> void:
+	_pick.enabled = count > 0 and not felled
 	for child in $Apples.get_children():
 		$Apples.remove_child(child)
 		child.queue_free()

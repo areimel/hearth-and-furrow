@@ -34,6 +34,10 @@ var action_override: Callable = Callable()
 var action_item: ItemData
 
 var _action: int = G.ToolKind.NONE
+## True from the moment a screen swallowed an `action` press until the button has been up for a
+## full physics tick, so the press that closed a dialogue is not read again as an interaction.
+var _action_gate: bool = false
+var _gate_released: bool = false
 var _interactables: Array[Interactable] = []
 var _focused: Interactable
 
@@ -48,9 +52,19 @@ func _ready() -> void:
 	_add_light()
 
 
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"action") and not event.is_echo() and UIScreen.any_open(get_tree()):
+		_close_gate()
+
+
 func _physics_process(_delta: float) -> void:
 	_update_interact_focus()
-	if input_locked or UIScreen.any_open(get_tree()):
+	var screen_open := UIScreen.any_open(get_tree())
+	if screen_open:
+		_close_gate()
+	elif _action_gate:
+		_update_gate()
+	if input_locked or screen_open:
 		velocity = Vector2.ZERO
 		$Sounds/Step.stop()
 		return
@@ -62,11 +76,11 @@ func _physics_process(_delta: float) -> void:
 				_move()
 				_animate()
 		State.FISHING:
-			if Input.is_action_just_pressed("action"):
+			if _action_pressed():
 				$FishingGame.apply_bar_boost()
 		State.HOUSE:
 			_hotbar_input()
-			if Input.is_action_just_pressed("action"):
+			if _action_pressed():
 				_interact_with_nearest()
 			_move()
 			_animate()
@@ -91,6 +105,27 @@ func start_fishing(ease_factor: float = 1.0) -> void:
 
 # ---------------------------------------------------------------- input
 
+func _close_gate() -> void:
+	_action_gate = true
+	_gate_released = false
+
+
+# Opens the gate once `action` was up for one whole tick (a press that came and went between
+# ticks still reads as "just pressed" on the next tick, so that tick must stay gated too).
+func _update_gate() -> void:
+	if Input.is_action_pressed(&"action"):
+		_gate_released = false
+	elif _gate_released:
+		_action_gate = false
+	else:
+		_gate_released = true
+
+
+## True on the physics frame `action` goes down, unless a screen has swallowed that press.
+func _action_pressed() -> bool:
+	return not _action_gate and Input.is_action_just_pressed("action")
+
+
 func _hotbar_input() -> void:
 	if Input.is_action_just_pressed("tool_forward") or Input.is_action_just_pressed("tool_backward"):
 		Inventory.cycle_hotbar(int(Input.get_axis("tool_backward", "tool_forward")))
@@ -100,7 +135,7 @@ func _hotbar_input() -> void:
 
 
 func _default_input() -> void:
-	if Input.is_action_just_pressed("action"):
+	if _action_pressed():
 		if action_override.is_valid():
 			action_override.call()
 		elif not _interact_with_nearest():

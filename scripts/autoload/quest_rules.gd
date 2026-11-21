@@ -39,15 +39,14 @@ static func progress(cond: QuestCondition, since_day: int, probes: Dictionary) -
 	return 0
 
 
-## Apply one reward. FRIENDSHIP_ALL goes to `npc_ids` (empty: every villager).
-static func grant(reward: QuestReward, npc_ids: Array[StringName]) -> void:
+## Apply one reward. FRIENDSHIP_ALL goes to `npc_ids` (empty: every villager). Item rewards
+## go through Loot (toast, no Progress verb); what does not fit in a full pack is lost.
+static func grant(tree: SceneTree, reward: QuestReward, npc_ids: Array[StringName]) -> void:
 	match reward.kind:
 		QuestReward.COINS:
 			Economy.add_coins(reward.amount)
 		QuestReward.ITEM:
-			var leftover := Inventory.add(reward.target, reward.amount)
-			if leftover > 0:
-				push_warning("QuestManager: no room for %d %s" % [leftover, reward.target])
+			Loot.give(tree, reward.target, reward.amount, &"")
 		QuestReward.FLAG:
 			Progress.set_flag(reward.target)
 		QuestReward.FRIENDSHIP:

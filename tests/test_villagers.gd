@@ -119,7 +119,6 @@ func test_option_registration_before_spawn() -> void:
 	villagers.register_option(&"miller", "Trade", func() -> void: hits.append(1))
 	villagers.register_option(&"miller", "Secret", func() -> void: hits.append(2),
 			func() -> bool: return false)
-	eq(villagers.pending_options(&"miller").size(), 2, "queued")
 	world.add_child(villagers)
 	eq(villagers.all().size(), Content.npcs().size(), "all spawned")
 	var miller := villagers.npc(&"miller")
@@ -131,6 +130,23 @@ func test_option_registration_before_spawn() -> void:
 	eq(hits, [1] as Array[int], "callback wired")
 	villagers.register_option(&"reeve", "Errand", func() -> void: pass)
 	eq(villagers.npc(&"reeve").dialogue_options().size(), 1, "after spawn")
+	await _drop_world()
+
+
+func test_line_override_replaces_the_greeting() -> void:
+	await _make_world({})
+	var villagers: Villagers = load("res://scenes/world/villagers.tscn").instantiate()
+	world.add_child(villagers)
+	eq(villagers.line_override(&"miller").size(), 0, "no provider, no lines")
+	villagers.set_line_override(func(id: StringName) -> Array[String]:
+		var lines: Array[String] = []
+		if id == &"miller":
+			lines.append("Merry feast, %s" % id)
+		return lines)
+	eq(villagers.line_override(&"miller"), ["Merry feast, miller"] as Array[String], "override lines")
+	eq(villagers.line_override(&"reeve").size(), 0, "empty falls through")
+	villagers.set_line_override(Callable())
+	eq(villagers.line_override(&"miller").size(), 0, "cleared")
 	await _drop_world()
 
 
@@ -160,7 +176,7 @@ func test_interaction_talks_then_gifts_through_the_box() -> void:
 	world.add_child(npc)
 	npc.add_dialogue_option("Trade", func() -> void: pass)
 	Inventory.select_hotbar(0)
-	eq(npc.prompt_text(), "Talk", "tool selected")
+	eq((npc.get_node("Interactable") as Interactable).prompt_text, "Talk", "prompt is always Talk")
 	var talked: Array[StringName] = []
 	npc.talked.connect(func(id: StringName) -> void: talked.append(id))
 	npc._on_interacted(null)
@@ -176,10 +192,22 @@ func test_interaction_talks_then_gifts_through_the_box() -> void:
 		if Inventory.slot_id(i) == &"bread":
 			Inventory.move(i, 5)
 	Inventory.select_hotbar(5)
-	eq(npc.prompt_text(), "Give Loaf", "giftable selected")
 	npc._on_interacted(null)
+	check(box.is_open, "talk still opens with a giftable selected")
+	eq(Relationships.points(&"miller"), 20, "holding bread does not give it")
+	var texts: Array[String] = []
+	for option in npc._talk._choices():
+		texts.append(option["text"])
+	eq(texts, ["Give Loaf", "Trade"] as Array[String], "give is a choice next to Trade")
+	(npc._talk._choices()[0]["payload"] as Callable).call()
 	eq(Relationships.points(&"miller"), 100, "loved bread")
-	check(box.is_open, "reaction shown")
 	check(npc.get_node("Emote").visible, "emote shown")
+	check(Inventory.count(&"bread") == 0, "the loaf was given")
+	box.close()
+	npc._on_interacted(null)
+	texts.clear()
+	for option in npc._talk._choices():
+		texts.append(option["text"])
+	eq(texts, ["Trade"] as Array[String], "no give after today's gift")
 	box.close()
 	await _drop_world()

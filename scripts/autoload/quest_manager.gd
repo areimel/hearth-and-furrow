@@ -197,9 +197,8 @@ func can_claim_perk(quest_id: StringName) -> bool:
 	if not perk_available(quest_id):
 		return false
 	var quest := Content.quest(quest_id)
-	for id: StringName in quest.perk_takes:
-		if not Inventory.has(id, quest.perk_takes[id]):
-			return false
+	if not Loot.has_all(quest.perk_takes):
+		return false
 	for id: StringName in quest.perk_gives:
 		if not Inventory.can_add(id, quest.perk_gives[id]):
 			return false
@@ -212,10 +211,9 @@ func claim_perk(quest_id: StringName) -> bool:
 		return false
 	var quest := Content.quest(quest_id)
 	_perk_days[quest_id] = GameClock.day_index
-	for id: StringName in quest.perk_takes:
-		Inventory.remove(id, quest.perk_takes[id])
+	Loot.take(quest.perk_takes)
 	for id: StringName in quest.perk_gives:
-		Inventory.add(id, quest.perk_gives[id])
+		Loot.give(get_tree(), id, quest.perk_gives[id], &"")
 	return true
 
 
@@ -223,7 +221,7 @@ func claim_perk(quest_id: StringName) -> bool:
 
 ## Apply one reward. FRIENDSHIP_ALL goes to `npc_ids` (default: every villager).
 func grant(reward: QuestReward, npc_ids: Array[StringName] = []) -> void:
-	Rules.grant(reward, npc_ids)
+	Rules.grant(get_tree(), reward, npc_ids)
 
 
 # --- Save ---
