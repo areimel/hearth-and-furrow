@@ -196,3 +196,21 @@ Never call `advance_day()` from inside a `day_ending`/`day_passed` handler.
   options via `Villagers.register_option`, starts auto quests on a new game, plays hand-offs,
   toasts, and registers the field probes. Quest words live in `data/dialogue_quests.gd`.
 - Flags set by quests: `prologue_done`, `miller_fair_measure`, `alewife_barm_share`.
+
+## Feasts (additions by the feasts branch)
+- **FestivalData** new fields: `note` (Almanack), `gather_place` + `spot_prefix` (villagers
+  stand on the child markers `spot_*` of `feast_ground`, else at `location`), `announce`,
+  `reminder`, `asks: Array[QuestCondition]` (DELIVER_ITEM, `targets` = accepted items,
+  `amount` wanted, `text`), `tiers: Array[RewardTier]` (`min_count`, `text`, `rewards`,
+  `describe()`); helpers `is_running_at(hour)`, `total_asked()`, `tier_index(count)`.
+  Feast words live in `data/dialogue_feasts.gd`.
+- **FestivalDirector** (`scenes/world/festival_director.tscn`, one child of Level; save key
+  `festivals`): `today()`, `tomorrow()`, `running()`, `given(f, ask)`, `total_given(f)`,
+  `can_give(f, ask)`, `present()`, `sync()`, `begin(f)`, `contribute(ask) -> int`,
+  `contribute_all() -> int`, `mark_attended()`, `resolve(quiet := false) -> int`,
+  `open_table()`; signals `announced(text)`, `feast_started(id)`,
+  `contributed(id, ask, amount)`, `feast_resolved(id, tier)`.
+  Feast runs `start_hour..end_hour`; resolves at the end hour or on `day_ending` (sleep);
+  only the highest tier reached pays, and only if the player came (table, greeting or gift).
+- **FestivalScreen** (`scenes/ui/festival_screen.tscn`, group `FestivalScreen`): opened by
+  the feast table; instanced under `Menus` on demand if the HUD has none.
