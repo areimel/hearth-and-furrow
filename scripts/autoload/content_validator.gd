@@ -14,6 +14,7 @@ func run(content: Node) -> Array[String]:
 	_check_crops()
 	_check_recipes_and_stations()
 	_check_animals()
+	_check_gatherables()
 	_check_npcs()
 	_check_quests()
 	_check_festivals()
@@ -92,6 +93,16 @@ func _check_animals() -> void:
 	for a: AnimalData in _c.animals():
 		_need_item(a.product_item, "animal %s" % a.id)
 		_need_item(a.feed_item, "animal %s" % a.id)
+
+
+func _check_gatherables() -> void:
+	for g: GatherableData in _c.gatherables():
+		if g.yields.is_empty():
+			_out.append("gatherable %s: no yields" % g.id)
+		for row in g.yields:
+			_need_item(row.get("item", &""), "gatherable %s" % g.id)
+			if int(row.get("min", 1)) > int(row.get("max", 1)):
+				_out.append("gatherable %s: min > max" % g.id)
 
 
 func _check_npcs() -> void:

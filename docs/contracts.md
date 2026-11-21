@@ -170,3 +170,20 @@ Never call `advance_day()` from inside a `day_ending`/`day_passed` handler.
 - **Loot.give(tree, item_id, amount, verb) -> int**: Inventory + Progress + toast ("Pack is full" on overflow).
 - **Player**: `input_locked`, `highlighter_on`, `action_item`, signal `interact_focus_changed(Interactable)`.
   An Interactable's prompt text is metadata `prompt_text` on it or its parent (default "Use").
+## Gathering nodes (feature `foraging`)
+Rows in `data/gatherables.gd` (`hazel bramble stone clay reeds`) -> `GatherableData`
+(`yields_for(season, day_of_season)`, `needs_tool()`); `Content.gatherable(id)`, `gatherables()`.
+Yield rows: `{item, min, max, seasons?, from_day?}`; optional `tool` (G.ToolKind, default none) makes the
+prompt read "Needs an axe" until a matching tool is in the pack.
+- `Gatherable` (`scenes/objects/gatherable.tscn`, extends `Placeable`, claims its FarmGrid cell):
+  `Gatherable.create(id)` then `setup(cell, level, level.gatherables())`; `gather() -> bool`,
+  `is_ripe()`, `roll_yields()`, `prompt_text()`, `to_dict()/from_dict()`. Gathering delivers to
+  Inventory (leftover stays in `pending`), calls `Progress.record(&"gathered", item, n)`, depletes,
+  and regrows after `regrow_days` `GameClock.day_ending`s. Prompt is meta `prompt_text` on its Interactable.
+- `Foraging` (`scenes/world/foraging.tscn`): instance as a child of `Level`. Spawns into
+  `level.gatherables()`, scatters (seeded from `Weather.world_seed`, fallback 1530) two frames after
+  ready, registers save key `foraging`. API: `nodes()`, `count_ready(id)`, `node_at(cell)`,
+  `place(id, cell)`, `scatter(id, count, rng)`, `scatter_area(marker, rng)`.
+- Extra spawn areas: a `Marker2D` in group `ForageArea` with metadata `gatherable_id`, `count` and
+  optional `radius` (pixels, default 48) gets that many nodes on a new game.
+- Placement rules (`place` in the row): `any_grass`, `near_water` (orthogonally next to water).

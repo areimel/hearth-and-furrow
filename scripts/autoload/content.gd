@@ -11,7 +11,8 @@ const Crops := preload("res://data/crops.gd")
 const Recipes := preload("res://data/recipes.gd")
 const Stations := preload("res://data/stations.gd")
 const Animals := preload("res://data/animals.gd")
-const Npcs := preload("res://data/npcs.gd")
+const Gatherables := preload("res://data/gatherables.gd")
+const Npcs :=preload("res://data/npcs.gd")
 const Quests := preload("res://data/quests.gd")
 const Festivals := preload("res://data/festivals.gd")
 const ToolTiers := preload("res://data/tool_tiers.gd")
@@ -21,7 +22,8 @@ var _crops: Dictionary[StringName, CropData] = {}
 var _recipes: Dictionary[StringName, RecipeData] = {}
 var _stations: Dictionary[StringName, StationData] = {}
 var _animals: Dictionary[StringName, AnimalData] = {}
-var _npcs: Dictionary[StringName, NPCData] = {}
+var _gatherables: Dictionary[StringName, GatherableData] = {}
+var _npcs:Dictionary[StringName, NPCData] = {}
 var _quests: Dictionary[StringName, QuestData] = {}
 var _festivals: Dictionary[StringName, FestivalData] = {}
 var _tool_tiers: Dictionary[StringName, ToolTierData] = {}
@@ -153,6 +155,15 @@ func animals() -> Array[AnimalData]:
 	return out
 
 
+func gatherable(id: StringName) -> GatherableData:
+	return _lookup(_gatherables, id, "gatherable") as GatherableData
+
+
+func gatherables() -> Array[GatherableData]:
+	_ensure_built()
+	return Array(_gatherables.values(), TYPE_OBJECT, &"Resource", GatherableData)
+
+
 func npc(id: StringName) -> NPCData:
 	return _lookup(_npcs, id, "npc") as NPCData
 
@@ -262,6 +273,8 @@ func _ensure_built() -> void:
 		_stations[id] = _builder.station(id, Stations.ROWS[id])
 	for id: StringName in Animals.ROWS:
 		_animals[id] = _builder.animal(id, Animals.ROWS[id])
+	for id: StringName in Gatherables.ROWS:
+		_gatherables[id] = _builder.gatherable(id, Gatherables.ROWS[id])
 	for id: StringName in Npcs.ROWS:
 		_npcs[id] = _builder.npc(id, Npcs.ROWS[id])
 	for id: StringName in Quests.ROWS:

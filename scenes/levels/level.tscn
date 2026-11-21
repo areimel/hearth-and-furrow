@@ -25,6 +25,7 @@
 [ext_resource type="PackedScene" path="res://scenes/world/villagers.tscn" id="wired_villagers"]
 [ext_resource type="PackedScene" path="res://scenes/ui/crafting_screen.tscn" id="wired_craftingscreen"]
 [ext_resource type="PackedScene" path="res://scenes/ui/dialogue_box.tscn" id="wired_dialoguebox"]
+[ext_resource type="PackedScene" path="res://scenes/world/foraging.tscn" id="wired_foraging"]
 
 [sub_resource type="Gradient" id="Gradient_rmjfq"]
 offsets = PackedFloat32Array(0, 0.21830986, 0.42488262, 1)
@@ -2844,6 +2845,8 @@ autoplay = true
 [node name="CraftingScreen" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_craftingscreen")]
 
 [node name="DialogueBox" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_dialoguebox")]
+
+[node name="Foraging" parent="." instance=ExtResource("wired_foraging")]
 
 [connection signal="do_action" from="Objects/Player" to="." method="_on_player_do_action"]
 [connection signal="tool_use" from="Objects/Player" to="." method="_on_player_tool_use"]
