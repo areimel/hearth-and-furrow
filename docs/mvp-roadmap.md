@@ -36,8 +36,8 @@ Rules for contributors (human or agent):
 - [x] 20. Friendship, gifts, dialogue
 
 ## Wave 3 — story, UI, persistence
-- [ ] 21. Quests: prologue + three errands
-- [ ] 22. May Day and Harvest Home feasts
+- [x] 21. Quests: prologue + three errands
+- [x] 22. May Day and Harvest Home feasts
 - [x] 23. HUD
 - [x] 24. Pause menu tabs
 - [x] 25. Crafting and shop screens
