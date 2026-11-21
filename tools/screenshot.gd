@@ -11,7 +11,8 @@ extends Node
 ##   --frames N     frames to wait before capture (default 60)
 ##   --name NAME    file name without extension (default "shot")
 ##   --size WxH     window size, e.g. 1280x800 (default: project default)
-##   --setup STEP   named setup step run once the scene is up: fishing | rain | plants | menu
+##   --setup STEPS  comma-separated setup steps run once the scene is up, in order:
+##                  fishing | rain | storm | night | plants | days:N | menu | <method on the scene>
 ##   --upscale N    also write NAME_xN.png, nearest-neighbour enlarged (default 4; 1 = off)
 ## The raw PNG is the base-resolution viewport (320x180, or 320x200 on 16:10 windows).
 
@@ -34,7 +35,8 @@ func _ready() -> void:
 	add_child(scene)
 	await get_tree().process_frame
 	if _args.has("setup"):
-		_run_setup(String(_args["setup"]), scene)
+		for step in String(_args["setup"]).split(","):
+			_run_setup(step, scene)
 	for i in int(_args.get("frames", 60)):
 		await get_tree().process_frame
 	await RenderingServer.frame_post_draw
@@ -54,13 +56,21 @@ func _parse(argv: PackedStringArray) -> Dictionary:
 
 
 func _run_setup(step: String, scene: Node) -> void:
+	if step.begins_with("days:"):
+		for i in int(step.get_slice(":", 1)):
+			GameClock.advance_day()
+		return
 	match step:
 		"fishing":
 			var game := scene.find_child("FishingGame", true, false)
 			if game:
 				game.reveal()
 		"rain":
-			scene.set("raining", true)
+			Weather.set_today(G.WeatherKind.RAIN)
+		"storm":
+			Weather.set_today(G.WeatherKind.STORM)
+		"night":
+			GameClock.advance_minutes(17 * 60)
 		"plants":
 			var level := scene as Level
 			if level:

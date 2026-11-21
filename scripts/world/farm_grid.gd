@@ -20,6 +20,11 @@ var _occupants: Dictionary = {}  # Vector2i -> Node (untyped: entries may be fre
 var _last_dir: Vector2 = Vector2.ZERO
 
 
+func _ready() -> void:
+	GameClock.day_ending.connect(_on_day_ending)
+	GameClock.day_passed.connect(_on_day_passed)
+
+
 # ---------------------------------------------------------------- cells
 
 ## Grid cell containing a world position.
@@ -73,7 +78,7 @@ func water_all() -> void:
 		water(cell)
 
 
-## Clear all wet soil (start of a new day).
+## Clear all wet soil (done every evening after crops resolve).
 func dry_all() -> void:
 	wet_layer.clear()
 
@@ -130,6 +135,21 @@ func is_object_near_cell(cell: Vector2i) -> bool:
 		elif cell.x >= origin.x and cell.x <= origin.x + 1 and cell.y >= origin.y and cell.y <= origin.y + 1:
 			return true
 	return false
+
+
+# ---------------------------------------------------------------- day end
+
+## Evening: crops resolve against today's wet state, THEN the watering clears.
+func _on_day_ending(_day: int) -> void:
+	for plant: StaticBody2D in get_tree().get_nodes_in_group("Plants"):
+		plant.grow(is_wet(plant.coord))
+	dry_all()
+
+
+## Morning: rain waters every tilled cell.
+func _on_day_passed(_day: int) -> void:
+	if Weather.is_raining():
+		water_all()
 
 
 # ---------------------------------------------------------------- tools

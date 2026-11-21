@@ -4,6 +4,8 @@ extends CharacterBody2D
 const SPEED: float = Data.PLAYER_SPEED
 var direction: Vector2
 var can_move: bool = true
+## Set by DayCycle (and others) to freeze all gameplay input.
+var input_locked: bool = false
 @onready var move_state_machine = $Animation/AnimationTree.get("parameters/StateMachine/playback")
 
 @onready var tool_state_machine = $Animation/AnimationTree.get("parameters/ToolStateMachine/playback")
@@ -26,7 +28,6 @@ signal tool_use(tool: Enum.Tool, pos: Vector2, dir: Vector2)
 signal do_action(anim_tree: AnimationTree, property: StringName, tool: Enum.Tool, pos: Vector2, dir: Vector2)
 
 signal diagnose
-signal day_change
 
 var _interactables: Array[Interactable] = []
 
@@ -81,6 +82,10 @@ func _physics_process(_delta: float) -> void:
 			
 		update_state = current_state
 		
+	if input_locked or UIScreen.any_open(get_tree()):
+		velocity = Vector2.ZERO
+		$Sounds/Step.stop()
+		return
 	match current_state:
 		Enum.State.DEFAULT:
 			if can_move:
@@ -141,9 +146,6 @@ func get_basic_input():
 		Data.TARGET_HIGHLIGHTER = not Data.TARGET_HIGHLIGHTER 
 		update_control_ui.emit(Enum.KEYBOARD.CHANGE_HIGHLIGHT, 1 if Data.TARGET_HIGHLIGHTER else 0)
 
-	if Input.is_action_just_pressed("day_change"):
-		day_change.emit()
-		
 	if Input.is_action_just_pressed("diagnose"):
 		diagnose.emit()
 		

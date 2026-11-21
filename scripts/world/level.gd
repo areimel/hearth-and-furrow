@@ -6,17 +6,6 @@ class_name Level extends Node2D
 
 signal update_hint_ui_keys
 
-@export var daytimer_color: Gradient
-@export var rain_color: Color
-@export var volume_curve: Curve
-
-var raining: bool = false:
-	set(value):
-		raining = value
-		$Layers/RainFloorsParticles.emitting = value
-		$Overlay/RainParticles2D.emitting = value
-		$Sounds/Rain.playing = value
-
 var _build_cell: Vector2i
 
 const PLANT_SCENE := preload("res://scenes/objects/plant.tscn")
@@ -24,29 +13,27 @@ const PLANT_INFO_SCENE := preload("res://scenes/ui/plant_info.tscn")
 
 @onready var farm_grid: FarmGrid = $FarmGrid
 @onready var player: CharacterBody2D = $Objects/Player
-@onready var _day_timer: Timer = $Timers/DayTimer
-@onready var _day_transition_material: Material = $Overlay/CanvasLayer/DayTransitionLayer.material
+@onready var day_cycle: DayCycle = $DayCycle
+@onready var sky: WorldSky = $Sky
 @onready var _preview: Sprite2D = $Overlay/PreviewMachineSprite2D
 @onready var _plant_info_control: Control = $Overlay/CanvasLayer/PlantInfoControl
 
 
 func _ready() -> void:
 	add_to_group("Level")
-	Data.FORECAST_RAIN = [true, false].pick_random()
-	if raining:
-		farm_grid.water_all()
+	GameClock.day_passed.connect(_on_day_passed)
+	GameClock.start()
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	if Input.get_connected_joypads().size() > 0:
 		Data.ControllerConnected = true
 
 
+func _exit_tree() -> void:
+	GameClock.stop()
+
+
 func _process(_delta: float) -> void:
-	var daytime_point := 1.0 - _day_timer.time_left / _day_timer.wait_time
-	var color := daytimer_color.sample(daytime_point)
-	$Sounds/BG.volume_db = volume_curve.sample(daytime_point)
-	if raining:
-		color = color.lerp(rain_color, 1.0 - daytime_point)
-	$Overlay/CanvasModulate.color = color
+	GameClock.set_paused(UIScreen.any_open(get_tree()) or day_cycle.busy)
 
 	if Data.TARGET_HIGHLIGHTER:
 		farm_grid.update_highlight(player.position, player.animation_direction, player.current_tool)
@@ -84,33 +71,11 @@ func gatherables() -> Node2D:
 
 # ---------------------------------------------------------------- day cycle
 
-func _on_player_day_change() -> void:
-	day_restart()
-
-
-func day_restart() -> void:
-	var tween := create_tween()
-	tween.tween_property(_day_transition_material, "shader_parameter/progress", 1.0, 1.0)
-	tween.tween_interval(0.5)
-	tween.tween_callback(level_reset)
-	tween.tween_property(_day_transition_material, "shader_parameter/progress", 0.0, 1.0)
-
-
-func level_reset() -> void:
-	for plant: StaticBody2D in get_tree().get_nodes_in_group("Plants"):
-		plant.grow(farm_grid.is_wet(plant.coord))
-	_day_timer.start()
-	farm_grid.dry_all()
-
+func _on_day_passed(_day: int) -> void:
 	for tree: Node in get_tree().get_nodes_in_group("Tree"):
 		if [false, true].pick_random():
 			continue
 		tree.create_apple()  # 50% that the apple count stays the same
-
-	raining = Data.FORECAST_RAIN
-	Data.FORECAST_RAIN = [true, false].pick_random()
-	if raining:
-		farm_grid.water_all()
 
 
 # ---------------------------------------------------------------- player actions
@@ -128,7 +93,7 @@ func _on_player_tool_use(tool: Enum.Tool, pos: Vector2, dir: Vector2) -> void:
 	match tool:
 		Enum.Tool.HOE:
 			farm_grid.till(cell)
-			if raining:
+			if Weather.is_raining():
 				farm_grid.water(cell)
 		Enum.Tool.WATER:
 			farm_grid.water(cell)
