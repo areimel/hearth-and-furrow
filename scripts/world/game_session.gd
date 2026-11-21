@@ -8,7 +8,7 @@ extends Node
 ## A new game is the mirror: the autoloads are reset first and the level's own starter
 ## herd / yard only appear because no section is waiting for them.
 
-const TITLE_SCENE := "res://scenes/ui/title.tscn"
+const TITLE_SCENE := "res://scenes/ui/title_screen.tscn"
 const LEVEL_SCENE := "res://scenes/levels/level.tscn"
 ## Frames to let the level finish its deferred setup (livestock, stations) before wiring.
 const SETTLE_FRAMES := 3

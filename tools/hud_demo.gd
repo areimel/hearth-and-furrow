@@ -21,7 +21,7 @@ func _ready() -> void:
 		layer.get_node(legacy).hide()
 	_hud = load("res://scenes/ui/hud.tscn").instantiate()
 	layer.get_node("HUD").add_child(_hud)
-	_menu = load("res://scenes/ui/menu.tscn").instantiate()
+	_menu = load("res://scenes/ui/game_menu.tscn").instantiate()
 	layer.get_node("Menus").add_child(_menu)
 
 

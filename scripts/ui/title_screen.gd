@@ -33,11 +33,8 @@ func _ready() -> void:
 	menu.entry_selected.connect(_on_selected)
 	menu.cancelled.connect(_on_cancelled)
 	_frame.add_content(menu)
-	_message = Label.new()
+	_message = UIText.label("", &"WarnLabel", 160)
 	_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_message.add_theme_color_override(&"font_color", UIPalette.CRIMSON)
-	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_message.custom_minimum_size.x = 160
 	_frame.add_content(_message)
 	show_main()
 
@@ -104,8 +101,11 @@ func _dispatch(action: StringName) -> void:
 	match action:
 		CONTINUE:
 			_busy = true
-			var err: Error = await GameSession.continue_game()
-			if err != OK:
+			# Not awaited: on success continue_game() changes the scene and frees this title
+			# while suspended. A load failure returns its Error before any await, so
+			# `result` is an int then; on success it is the pending coroutine state.
+			var result: Variant = GameSession.call(&"continue_game")
+			if result is int and result != OK:
 				_busy = false
 				_message.text = SaveManager.last_message
 		NEW_GAME, CONFIRM_NEW:

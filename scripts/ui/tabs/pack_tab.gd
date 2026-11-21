@@ -156,7 +156,7 @@ func _refresh_marks() -> void:
 
 
 func _refresh_purse() -> void:
-	_purse.set_content(StatusIcons.coin(), "%d coins" % Economy.coins)
+	_purse.set_content(StatusIcons.coin(), UIText.coins(Economy.coins))
 
 
 func _rebind_pack() -> void:
