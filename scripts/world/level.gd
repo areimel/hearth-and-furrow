@@ -6,11 +6,13 @@ class_name Level extends Node2D
 
 const Balance := preload("res://data/balance.gd")
 const REACH: float = 22.0  ## How far an axe swing reaches, in pixels.
+const PREVIEW_TINT := Color(1, 1, 1, 0.59)
 
 @onready var farm_grid: FarmGrid = $FarmGrid
 @onready var player: Player = $Objects/Player
 @onready var day_cycle: DayCycle = $DayCycle
 @onready var sky: WorldSky = $Sky
+@onready var build_mode: BuildMode = $BuildMode
 @onready var _preview: Sprite2D = $Overlay/PreviewMachineSprite2D
 @onready var _prompt: Prompt = $Overlay/CanvasLayer/HUD/Prompt
 @onready var _target_info: Label = $Overlay/CanvasLayer/HUD/TargetInfo
@@ -18,7 +20,6 @@ const REACH: float = 22.0  ## How far an axe swing reaches, in pixels.
 
 func _ready() -> void:
 	add_to_group("Level")
-	GameClock.day_passed.connect(_on_day_passed)
 	GameClock.start()
 	player.interact_focus_changed.connect(_on_interact_focus_changed)
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
@@ -36,9 +37,9 @@ func _exit_tree() -> void:
 func _process(_delta: float) -> void:
 	GameClock.set_paused(UIScreen.any_open(get_tree()) or day_cycle.busy)
 	_update_target_readout()
-	if _preview.visible:
+	if _preview.visible:  # bottom-left aligned, like a placed Station's sprite
 		_preview.position = Vector2(target_cell() * Balance.TILE_SIZE) \
-				+ (Vector2(Balance.TILE_SIZE, Balance.TILE_SIZE) - _preview.texture.get_size()) / 2.0
+				+ Vector2(0, Balance.TILE_SIZE - _preview.texture.get_size().y)
 
 
 # ---------------------------------------------------------------- accessors
@@ -63,47 +64,54 @@ func gatherables() -> Node2D:
 	return $Objects/Gatherables
 
 
+## True while the player is in build mode (placing or removing structures).
+func is_building() -> bool:
+	return build_mode != null and build_mode.active()
+
+
 ## The grid cell in front of the player.
 func target_cell() -> Vector2i:
 	return farm_grid.get_target_grid(player.position, player.animation_direction)
 
 
-# ---------------------------------------------------------------- day cycle
-
-func _on_day_passed(_day: int) -> void:
-	for tree: Node in get_tree().get_nodes_in_group("Tree"):
-		if [false, true].pick_random():
-			continue
-		tree.create_apple()  # 50% that the apple count stays the same
-
-
 # ---------------------------------------------------------------- player actions
 
-## Fire the tool animation only if the action is valid on the targeted cell.
+## Fire the tool animation only if the action is valid on at least one targeted cell.
 func _on_player_do_action(anim_tree: AnimationTree, property: StringName, action: int, pos: Vector2, dir: Vector2) -> void:
 	if action == PlayerActions.SOW and player.action_item == null:
 		return
-	if farm_grid.is_tool_valid(action, farm_grid.get_target_grid(pos, dir)):
-		anim_tree.set(property, AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+	for cell in _swing_cells(action, pos, dir):
+		if farm_grid.is_tool_valid(action, cell):
+			anim_tree.set(property, AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+			return
 
 
+## Apply the swing to every cell its tool tier covers; cells where it is invalid are skipped.
 func _on_player_tool_use(action: int, pos: Vector2, dir: Vector2) -> void:
-	var cell := farm_grid.get_target_grid(pos, dir)
-	if farm_grid.occupant(cell) is Placeable:
+	var tier := PlayerActions.tier_of(player.action_item)
+	if action == G.ToolKind.AXE:
+		_swing(action, pos, dir, REACH, tier)
 		return
-	match action:
-		G.ToolKind.HOE:
-			_hoe(cell)
-		G.ToolKind.WATERING_CAN:
-			farm_grid.water(cell)
-		G.ToolKind.FISHING_ROD:
-			player.start_fishing()
-		G.ToolKind.SICKLE:
-			farm_grid.crop_field.reap(cell)
-		G.ToolKind.AXE:
-			_swing(action, pos, dir, REACH)
-		PlayerActions.SOW:
-			_sow(cell)
+	for cell in _swing_cells(action, pos, dir):
+		if not farm_grid.is_tool_valid(action, cell):
+			continue
+		match action:
+			G.ToolKind.HOE:
+				_hoe(cell)
+			G.ToolKind.WATERING_CAN:
+				farm_grid.water(cell)
+			G.ToolKind.FISHING_ROD:
+				player.start_fishing(tier.fishing_ease if tier else 1.0)
+			G.ToolKind.SICKLE:
+				farm_grid.crop_field.reap(cell)
+			PlayerActions.SOW:
+				_sow(cell)
+
+
+## Cells the swing covers: the target cell plus, for area tools, the ones beyond it.
+func _swing_cells(action: int, pos: Vector2, dir: Vector2) -> Array[Vector2i]:
+	var cell := farm_grid.get_target_grid(pos, dir)
+	return ToolArea.cells(action, PlayerActions.tier_of(player.action_item), cell, cell - farm_grid.cell_of(pos))
 
 
 func _hoe(cell: Vector2i) -> void:
@@ -126,18 +134,20 @@ func _sow(cell: Vector2i) -> void:
 		farm_grid.crop_field.sow(cell, crop_data.id)
 
 
-## Call hit(tool, dir) on every Axe_able object within reach in front of the player.
-func _swing(action: int, pos: Vector2, dir: Vector2, reach: float) -> void:
+## Call hit(tool, dir, tier) on every Axe_able object within reach in front of the player.
+func _swing(action: int, pos: Vector2, dir: Vector2, reach: float, tier: ToolTierData) -> void:
 	for object: Node2D in get_tree().get_nodes_in_group("Axe_able"):
 		var to_object := object.position - pos
 		# dot > 0 means in front, closer to 1 means more aligned
 		if to_object.length() < reach and dir.dot(to_object.normalized()) > 0.65:
-			object.hit(action, dir)
+			object.hit(action, dir, tier)
 
 
 # ---------------------------------------------------------------- HUD feedback
 
 func _on_interact_focus_changed(target: Interactable) -> void:
+	if is_building():
+		return  # BuildMode owns the prompt
 	if target == null:
 		_prompt.hide_prompt()
 		return
@@ -148,11 +158,12 @@ func _on_interact_focus_changed(target: Interactable) -> void:
 ## With the highlighter on: tint the target cell and describe the crop standing on it.
 func _update_target_readout() -> void:
 	var crop: Crop = null
-	if player.highlighter_on:
-		var action := PlayerActions.for_item(Inventory.selected_item())
-		farm_grid.update_highlight(player.position, player.animation_direction, action)
+	if player.highlighter_on and not is_building():
+		var item := Inventory.selected_item()
+		farm_grid.update_highlight(player.position, player.animation_direction,
+				PlayerActions.for_item(item), PlayerActions.tier_of(item))
 		crop = farm_grid.crop_field.crop_at(target_cell())
-	else:
+	elif not is_building():
 		farm_grid.clear_highlight()
 	_target_info.visible = crop != null
 	if crop:
@@ -165,7 +176,7 @@ func _update_target_readout() -> void:
 
 ## Whether a Placeable may be built on the cell in front of the player.
 func can_place_at_target() -> bool:
-	return farm_grid.is_free_for_placement(target_cell())
+	return farm_grid.is_buildable(target_cell())
 
 
 ## Instantiate `scene` (root must be a Placeable) on the target cell under stations().
@@ -178,9 +189,11 @@ func place_at_target(scene: PackedScene) -> Placeable:
 	return placeable
 
 
-## Show a half-transparent `texture` on the target cell until hide_placement_preview().
-func show_placement_preview(texture: Texture2D) -> void:
+## Show a `tint`ed (default half-transparent) `texture` on the target cell until
+## hide_placement_preview(). Call again to change the tint, e.g. green/red for validity.
+func show_placement_preview(texture: Texture2D, tint: Color = PREVIEW_TINT) -> void:
 	_preview.texture = texture
+	_preview.modulate = tint
 	_preview.visible = true
 
 

@@ -128,6 +128,12 @@ func is_free_for_placement(cell: Vector2i) -> bool:
 	return ground_layer.get_cell_tile_data(cell) != null and not is_water(cell)
 
 
+## Whether a station or other structure may be built on `cell`: free for placement and
+## not tilled (crops and other occupants already block through occupancy).
+func is_buildable(cell: Vector2i) -> bool:
+	return is_free_for_placement(cell) and not is_tilled(cell)
+
+
 ## True if the cell falls inside the footprint of any node in group "Objects"
 ## (trees: 3x3 bottom-centre, others: 2x2 top-left).
 func is_object_near_cell(cell: Vector2i) -> bool:
@@ -162,6 +168,8 @@ func _on_day_passed(_day: int) -> void:
 func is_tool_valid(action: int, cell: Vector2i) -> bool:
 	if _in_house(cell) or ground_layer.get_cell_tile_data(cell) == null:
 		return false
+	if occupant(cell) is Placeable:
+		return false
 	var crop := crop_field.crop_at(cell)
 	match action:
 		G.ToolKind.HOE:
@@ -181,14 +189,26 @@ func is_tool_valid(action: int, cell: Vector2i) -> bool:
 	return false
 
 
-## Draw the green/red highlight for the cell targeted by a player at `pos` facing `dir`.
-func update_highlight(pos: Vector2, dir: Vector2, action: int) -> void:
+## Draw the highlight for every cell a swing of `action` by a player at `pos` facing `dir`
+## will affect: the target cell is green or red, further cells of an area tool are shown
+## only where valid. `tier` is the swung tool's tier (null = single cell).
+func update_highlight(pos: Vector2, dir: Vector2, action: int, tier: ToolTierData = null) -> void:
 	if dir == Vector2.ZERO and _last_dir == Vector2.ZERO:
 		target_layer.clear()
 		return
 	var cell := get_target_grid(pos, dir)
 	target_layer.clear()
-	target_layer.set_cell(cell, 0, HIGHLIGHT_GREEN if is_tool_valid(action, cell) else HIGHLIGHT_RED)
+	var covered := ToolArea.cells(action, tier, cell, cell - cell_of(pos))
+	for i in covered.size():
+		var valid := is_tool_valid(action, covered[i])
+		if valid or i == 0:
+			target_layer.set_cell(covered[i], 0, HIGHLIGHT_GREEN if valid else HIGHLIGHT_RED)
+
+
+## Highlight just `cell`, green when `valid` (build mode).
+func highlight_cell(cell: Vector2i, valid: bool) -> void:
+	target_layer.clear()
+	target_layer.set_cell(cell, 0, HIGHLIGHT_GREEN if valid else HIGHLIGHT_RED)
 
 
 func clear_highlight() -> void:

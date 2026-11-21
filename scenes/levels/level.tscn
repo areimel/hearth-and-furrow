@@ -23,12 +23,16 @@
 [ext_resource type="PackedScene" path="res://scenes/world/livestock.tscn" id="wired_livestock"]
 [ext_resource type="PackedScene" path="res://scenes/world/workstations.tscn" id="wired_workstations"]
 [ext_resource type="PackedScene" path="res://scenes/world/villagers.tscn" id="wired_villagers"]
+[ext_resource type="Script" path="res://scripts/world/build_mode.gd" id="build_mode_script"]
+[ext_resource type="Script" path="res://scripts/world/tree_grove.gd" id="tree_grove_script"]
 [ext_resource type="PackedScene" path="res://scenes/ui/crafting_screen.tscn" id="wired_craftingscreen"]
 [ext_resource type="PackedScene" path="res://scenes/ui/dialogue_box.tscn" id="wired_dialoguebox"]
 [ext_resource type="PackedScene" path="res://scenes/world/foraging.tscn" id="wired_foraging"]
 [ext_resource type="PackedScene" path="res://scenes/world/village.tscn" id="wired_village"]
 [ext_resource type="PackedScene" path="res://scenes/world/shops.tscn" id="wired_shops"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop_screen.tscn" id="wired_shopscreen"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/build_menu.tscn" id="wired_buildmenu"]
 
 [sub_resource type="Gradient" id="Gradient_rmjfq"]
 offsets = PackedFloat32Array(0, 0.21830986, 0.42488262, 1)
@@ -2433,6 +2437,7 @@ position = Vector2(319, -211)
 
 [node name="Trees" type="Node2D" parent="Objects" unique_id=788674937]
 y_sort_enabled = true
+script = ExtResource("tree_grove_script")
 
 [node name="tree" parent="Objects/Trees" unique_id=1522359988 instance=ExtResource("9_7pb6i")]
 position = Vector2(-60, -6)
@@ -2843,6 +2848,11 @@ autoplay = true
 
 [node name="Workstations" parent="." instance=ExtResource("wired_workstations")]
 
+[node name="BuildMode" type="Node" parent="." node_paths=PackedStringArray("prompt", "workstations")]
+script = ExtResource("build_mode_script")
+prompt = NodePath("../Overlay/CanvasLayer/HUD/Prompt")
+workstations = NodePath("../Workstations")
+
 [node name="Villagers" parent="." instance=ExtResource("wired_villagers")]
 
 [node name="CraftingScreen" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_craftingscreen")]
@@ -2856,6 +2866,8 @@ autoplay = true
 [node name="Shops" parent="." instance=ExtResource("wired_shops")]
 
 [node name="ShopScreen" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_shopscreen")]
+
+[node name="BuildMenu" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_buildmenu")]
 
 [connection signal="do_action" from="Objects/Player" to="." method="_on_player_do_action"]
 [connection signal="tool_use" from="Objects/Player" to="." method="_on_player_tool_use"]

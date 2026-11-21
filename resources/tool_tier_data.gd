@@ -18,3 +18,7 @@ class_name ToolTierData extends Resource
 @export var area: int = 1
 ## Multiplier on tool animation speed / chopping power.
 @export var power: float = 1.0
+## Extra logs a felled tree gives with an axe of this tier.
+@export var bonus_logs: int = 0
+## Fishing minigame forgiveness: catch speed is multiplied and lose speed divided by this.
+@export var fishing_ease: float = 1.0

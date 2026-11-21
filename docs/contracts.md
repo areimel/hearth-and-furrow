@@ -209,3 +209,23 @@ prompt read "Needs an axe" until a matching tool is in the pack.
 - Extra spawn areas: a `Marker2D` in group `ForageArea` with metadata `gatherable_id`, `count` and
   optional `radius` (pixels, default 48) gets that many nodes on a new game.
 - Placement rules (`place` in the row): `any_grass`, `near_water` (orthogonally next to water).
+
+## Tool tiers, trees and building
+- **Tier rows** (`data/tool_tiers.gd`, `ToolTierData`): `area` (cells per swing, only for `ToolTiers.AREA_KINDS`: hoe, can, sickle),
+  `power` (axe damage per hit against `Balance.APPLE_TREE_HEALTH`), `bonus_logs`, `fishing_ease`. `PlayerActions.tier_of(item) -> ToolTierData`
+  (null for non-tools). `ToolArea.cells(action, tier, origin, step) -> Array[Vector2i]`: the cells a swing covers; each is validated on its own
+  with `FarmGrid.is_tool_valid`, invalid ones are skipped. `FarmGrid.update_highlight(pos, dir, action, tier := null)` shows all of them.
+  `is_tool_valid` is now false for any cell holding a `Placeable`.
+- **Axe_able** `hit(action, dir, tier: ToolTierData = null)`. **AppleTree** (`scripts/objects/tree.gd`): `health felled stump_days`, `hit()`, `fell(bonus_logs)`,
+  `regrow()`, `apple_count()`, `AppleTree.hits_to_fell(tier)`, `to_dict()/from_dict()`. Felling gives `Balance.TREE_LOGS + tier.bonus_logs` logs
+  (`Loot`, verb `gathered`); the stump regrows after `Balance.TREE_REGROW_DAYS` evenings (`GameClock.day_ending`); apples regrow only in
+  `Balance.APPLE_SEASONS`. **TreeGrove** (script of `Objects/Trees`) is the one `trees` save provider (`{"trees": {node name: state}}`).
+- **Fishing**: `Player.start_fishing(ease_factor := 1.0)` multiplies the minigame's catch speed and divides its lose speed.
+- **Building**: `FarmGrid.is_buildable(cell)` (free, dry, outside the house, untilled, unoccupied) is what `Level.can_place_at_target()` and
+  `Workstations.build()` check. `Workstations.can_remove(cell)` (exists, no job, no output) and `refund_of(station_id) -> Dictionary`
+  (`Balance.BUILD_REFUND_SHARE` of each cost item, rounded down). New games start with only `Balance.STARTER_STATIONS`.
+- **BuildMode** (`Level.build_mode`, `Level.is_building()`): `Mode {OFF, PLACE, REMOVE}`, `start_placing(id)`, `start_removing()`, `exit()`, `perform()`,
+  `target_valid()`, signal `mode_changed`. The `build` action opens **BuildMenu** (group `BuildMenu`, `open_menu()`, signals `station_chosen(id)`,
+  `remove_chosen`); `build` / `ui_cancel` leave build mode. While active `Player.action_override` (a Callable) takes the `action` button; any
+  future mode can use the same hook. `Level.show_placement_preview(texture, tint := PREVIEW_TINT)`; `FarmGrid.highlight_cell(cell, valid)`.
+  Refunds go through `Loot.give(..., &"refunded")`.
