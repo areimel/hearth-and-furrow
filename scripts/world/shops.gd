@@ -40,8 +40,8 @@ func _attach_options(retry: bool) -> void:
 	var villagers := get_tree().get_first_node_in_group(VILLAGERS_GROUP)
 	if villagers == null or not villagers.has_method(&"register_option"):
 		if retry:
-			await get_tree().process_frame
-			_attach_options(false)
+			# Deferred, not awaited: an await would resume on a freed node in tests.
+			_attach_options.call_deferred(false)
 		return
 	for shop in Content.shops():
 		villagers.call(&"register_option", shop.keeper, TRADE_TEXT, open.bind(shop.id),

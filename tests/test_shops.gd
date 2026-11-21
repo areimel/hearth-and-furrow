@@ -2,7 +2,6 @@ extends TestCase
 ## Shop data, shop-aware pricing, stock, and every kind of transaction.
 
 const Balance := preload("res://data/balance.gd")
-const LIVESTOCK_SCENE := preload("res://scenes/world/livestock.tscn")
 
 
 func before_each() -> void:
@@ -192,8 +191,7 @@ func test_animal_purchase_with_livestock() -> void:
 	var level: Level = load("res://scenes/levels/level.tscn").instantiate()
 	tree.root.add_child.call_deferred(level)
 	await tree.process_frame
-	var live: Livestock = LIVESTOCK_SCENE.instantiate()
-	level.add_child(live)
+	var live: Livestock = level.get_node("Livestock")
 	await tree.process_frame
 	await tree.process_frame
 	Economy.add_coins(3000)
