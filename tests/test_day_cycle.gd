@@ -8,28 +8,15 @@ func before_each() -> void:
 	SaveManager.new_game()
 
 
-func _spawn() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
-	level.day_cycle.fade_time = 0.0
-	level.day_cycle.hold_time = 0.0
-
-
-func _despawn() -> void:
-	level.free()
-	await tree.process_frame
-
-
 func test_level_starts_clock() -> void:
-	await _spawn()
+	level = await spawn_level()
 	check(GameClock.running, "clock running after level ready")
-	await _despawn()
+	await despawn_level()
 	check(not GameClock.running, "clock stops when level leaves")
 
 
 func test_end_day_advances_exactly_one_day() -> void:
-	await _spawn()
+	level = await spawn_level()
 	var finished := [0]
 	level.day_cycle.transition_finished.connect(func() -> void: finished[0] += 1)
 	level.day_cycle.end_day()
@@ -39,11 +26,11 @@ func test_end_day_advances_exactly_one_day() -> void:
 	eq(finished[0], 1, "finished once")
 	check(not level.day_cycle.busy, "not busy")
 	check(GameClock.running, "clock restarted")
-	await _despawn()
+	await despawn_level()
 
 
 func test_end_day_is_guarded_against_reentry() -> void:
-	await _spawn()
+	level = await spawn_level()
 	level.day_cycle.fade_time = 0.05
 	level.day_cycle.end_day()
 	level.day_cycle.end_day()
@@ -51,11 +38,11 @@ func test_end_day_is_guarded_against_reentry() -> void:
 	check(DayCycle.is_transitioning(tree), "static helper agrees")
 	await tree.create_timer(0.3).timeout
 	eq(GameClock.day_index, 1, "second call ignored")
-	await _despawn()
+	await despawn_level()
 
 
 func test_pass_out_moves_player_to_wake_point() -> void:
-	await _spawn()
+	level = await spawn_level()
 	level.player.global_position = Vector2(0, 0)
 	GameClock.advance_minutes(30 * 60)
 	await tree.process_frame
@@ -63,11 +50,11 @@ func test_pass_out_moves_player_to_wake_point() -> void:
 	check(level.player.global_position.distance_to(level.day_cycle.wake_point.global_position) < 8.0, "woke at bed")
 	check(GameClock.running, "clock running again")
 	check(not level.player.input_locked, "input unlocked")
-	await _despawn()
+	await despawn_level()
 
 
 func test_rain_wets_tilled_soil_on_new_morning() -> void:
-	await _spawn()
+	level = await spawn_level()
 	var cell := Vector2i(40, 40)
 	level.farm_grid.till(cell)
 	Weather.set_forecast(G.WeatherKind.RAIN)
@@ -81,11 +68,11 @@ func test_rain_wets_tilled_soil_on_new_morning() -> void:
 	await tree.process_frame
 	check(not level.farm_grid.is_wet(cell), "dry the next clear day")
 	check(not level.sky.is_raining(), "sky clear")
-	await _despawn()
+	await despawn_level()
 
 
 func test_pause_setting_governs_menus_but_not_the_transition() -> void:
-	await _spawn()
+	level = await spawn_level()
 	var settings := GameSettings.instance(tree)
 	var saved_autosave := settings.autosave
 	settings.autosave = false
@@ -105,11 +92,11 @@ func test_pause_setting_governs_menus_but_not_the_transition() -> void:
 	settings.set_value(&"pause_in_menus", true)
 	settings.autosave = saved_autosave
 	screen.close()
-	await _despawn()
+	await despawn_level()
 
 
 func test_debug_day_key_is_ignored_while_a_screen_is_open() -> void:
-	await _spawn()
+	level = await spawn_level()
 	var screen := UIScreen.new()
 	level.add_child(screen)
 	screen.open()
@@ -119,4 +106,4 @@ func test_debug_day_key_is_ignored_while_a_screen_is_open() -> void:
 	level.day_cycle._unhandled_input(key)
 	check(not level.day_cycle.busy, "no day change behind an open screen")
 	screen.close()
-	await _despawn()
+	await despawn_level()

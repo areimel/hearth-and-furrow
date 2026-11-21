@@ -169,20 +169,9 @@ func test_animal_save_round_trip() -> void:
 	_cleanup()
 
 
-func _spawn_level() -> Array:
-	var level: Level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
-	var live: Livestock = level.get_node("Livestock")
-	await tree.process_frame
-	await tree.process_frame
-	return [level, live]
-
-
 func test_starter_herd_cap_and_save() -> void:
-	var pair := await _spawn_level()
-	var level: Level = pair[0]
-	var live: Livestock = pair[1]
+	var level := await spawn_level(3)
+	var live: Livestock = level.get_node("Livestock")
 	eq(live.count(&"cow"), 1, "cow")
 	eq(live.count(&"sheep"), 1, "sheep")
 	eq(live.count(&"chicken"), 2, "chickens")
@@ -205,6 +194,5 @@ func test_starter_herd_cap_and_save() -> void:
 	live.from_dict(saved)
 	eq(live.animals().size(), total, "round trip count")
 	eq(live.animals()[0].mood, 11, "round trip mood")
-	level.free()
-	await tree.process_frame
+	await despawn_level()
 	check(not SaveManager.is_registered(&"livestock"), "unregistered on exit")

@@ -7,15 +7,8 @@ var grid: FarmGrid
 
 
 func _spawn() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)  # the root is busy while the runner starts
-	await tree.process_frame
+	level = await spawn_level()
 	grid = level.farm_grid
-
-
-func _despawn() -> void:
-	level.free()
-	await tree.process_frame
 
 
 func test_level_exposes_grid_and_containers() -> void:
@@ -24,7 +17,7 @@ func test_level_exposes_grid_and_containers() -> void:
 	check(level.is_in_group("Level"), "level not in group")
 	for container: Node2D in [level.crops(), level.animals(), level.stations(), level.npcs(), level.gatherables()]:
 		check(container != null, "container missing")
-	await _despawn()
+	await despawn_level()
 
 
 func test_cell_of_floors_negative_coordinates() -> void:
@@ -33,7 +26,7 @@ func test_cell_of_floors_negative_coordinates() -> void:
 	eq(grid.cell_of(Vector2(15.9, 16.0)), Vector2i(0, 1), "positive")
 	eq(grid.cell_of(Vector2(-0.1, -16.1)), Vector2i(-1, -2), "negative")
 	eq(grid.get_target_grid(Vector2(8, 8), Vector2(1, 0)), Vector2i(1, 0), "target in front")
-	await _despawn()
+	await despawn_level()
 
 
 func test_till_water_and_dry() -> void:
@@ -49,7 +42,7 @@ func test_till_water_and_dry() -> void:
 	check(not grid.is_wet(cell), "dry again")
 	grid.water_all()
 	check(grid.is_wet(cell), "rain wets tilled cells")
-	await _despawn()
+	await despawn_level()
 
 
 func test_occupancy() -> void:
@@ -64,7 +57,7 @@ func test_occupancy() -> void:
 	grid.occupy(cell, node)
 	node.free()
 	check(not grid.is_occupied(cell), "freed occupant ignored")
-	await _despawn()
+	await despawn_level()
 
 
 func test_dict_round_trip() -> void:
@@ -81,7 +74,7 @@ func test_dict_round_trip() -> void:
 	check(grid.is_tilled(a) and grid.is_tilled(b), "tilled restored")
 	check(grid.is_wet(b) and not grid.is_wet(a), "wet restored")
 	eq(grid.to_dict()["tilled"].size(), saved["tilled"].size(), "same tilled count")
-	await _despawn()
+	await despawn_level()
 
 
 func test_placeable_registers_and_releases_cell() -> void:
@@ -94,7 +87,7 @@ func test_placeable_registers_and_releases_cell() -> void:
 	placeable.remove()
 	await tree.process_frame
 	check(not grid.is_occupied(cell), "remove releases cell")
-	await _despawn()
+	await despawn_level()
 
 
 func test_village_ground_is_land_not_water() -> void:
@@ -111,7 +104,7 @@ func test_village_ground_is_land_not_water() -> void:
 		if village.is_cell_walkable(cell) and (grid.is_water(cell) or grid.is_farmable(cell)):
 			wet += 1
 	eq(wet, 0, "no walkable village cell is water or farmable")
-	await _despawn()
+	await despawn_level()
 
 
 func test_starter_layout_keeps_the_way_to_the_village_gate_open() -> void:
@@ -121,4 +114,4 @@ func test_starter_layout_keeps_the_way_to_the_village_gate_open() -> void:
 				and not grid._in_house(cell)
 	var reach := GridSearch.flood(grid.cell_of(level.player.position), open)
 	check(reach.has(Vector2i(28, -1)) or reach.has(Vector2i(28, 0)), "the gate approach is reachable from the house")
-	await _despawn()
+	await despawn_level()

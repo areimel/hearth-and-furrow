@@ -1,5 +1,5 @@
 class_name SaveSnapshot extends RefCounted
-## Helper (no test_ methods, so the runner skips it) shared by the save tests and
+## Helper (not test_*.gd, so the runner skips it) shared by the save tests and
 ## tools/year_sim.gd: a comparable picture of everything the save contract covers.
 
 

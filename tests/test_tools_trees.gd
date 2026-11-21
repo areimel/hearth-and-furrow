@@ -102,9 +102,7 @@ func test_apples_regrow_only_in_summer_and_autumn() -> void:
 
 
 func test_grove_saves_and_restores_every_tree() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
+	level = await spawn_level(1)
 	check(SaveManager.is_registered(&"trees"), "one provider registered")
 	var grove: TreeGrove = level.get_node("Objects/Trees")
 	var first := grove.trees()[0]
@@ -118,17 +116,13 @@ func test_grove_saves_and_restores_every_tree() -> void:
 	check(first.felled, "felled tree restored as a stump")
 	near(second.health, 2.0, 0.001, "damage restored")
 	check(not grove.trees()[2].felled, "untouched tree intact")
-	level.free()
-	await tree.process_frame
+	await despawn_level()
 
 
 func test_no_two_trees_stand_on_one_spot() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)
-	await tree.process_frame
+	level = await spawn_level(1)
 	var seen: Dictionary = {}
 	for t in (level.get_node("Objects/Trees") as TreeGrove).trees():
 		check(not seen.has(t.position), "%s stacked on %s" % [t.name, seen.get(t.position)])
 		seen[t.position] = t.name
-	level.free()
-	await tree.process_frame
+	await despawn_level()

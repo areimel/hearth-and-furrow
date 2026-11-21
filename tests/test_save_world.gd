@@ -39,18 +39,13 @@ func _cleanup() -> void:
 
 
 func _spawn() -> void:
-	level = load("res://scenes/levels/level.tscn").instantiate()
-	tree.root.add_child.call_deferred(level)  # the root is busy while the runner starts
-	await tree.process_frame
-	await tree.process_frame
-	await tree.process_frame
+	level = await spawn_level(3, false)
 	GameClock.stop()
 
 
 func _despawn() -> void:
-	level.free()
+	await despawn_level()
 	level = null
-	await tree.process_frame
 
 
 func _herd() -> Livestock:
