@@ -3,7 +3,6 @@ extends TestCase
 ## (on a real Level instance).
 
 const ANIMAL_SCENE := preload("res://scenes/actors/animal.tscn")
-const LIVESTOCK_SCENE := preload("res://scenes/world/livestock.tscn")
 
 var _spawned: Array[Node] = []
 
@@ -162,8 +161,7 @@ func _spawn_level() -> Array:
 	var level: Level = load("res://scenes/levels/level.tscn").instantiate()
 	tree.root.add_child.call_deferred(level)
 	await tree.process_frame
-	var live: Livestock = LIVESTOCK_SCENE.instantiate()
-	level.add_child(live)
+	var live: Livestock = level.get_node("Livestock")
 	await tree.process_frame
 	await tree.process_frame
 	return [level, live]

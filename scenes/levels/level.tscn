@@ -20,6 +20,11 @@
 [ext_resource type="PackedScene" uid="uid://bfjaiku70hbc8" path="res://scenes/levels/house.tscn" id="12_8iyoh"]
 [ext_resource type="Texture2D" uid="uid://da1u0rhfjt8a3" path="res://graphics/weather/drops.png" id="13_qogh7"]
 [ext_resource type="Texture2D" uid="uid://capn581vt8q7g" path="res://graphics/icons/sprinkler.png" id="15_mq31s"]
+[ext_resource type="PackedScene" path="res://scenes/world/livestock.tscn" id="wired_livestock"]
+[ext_resource type="PackedScene" path="res://scenes/world/workstations.tscn" id="wired_workstations"]
+[ext_resource type="PackedScene" path="res://scenes/world/villagers.tscn" id="wired_villagers"]
+[ext_resource type="PackedScene" path="res://scenes/ui/crafting_screen.tscn" id="wired_craftingscreen"]
+[ext_resource type="PackedScene" path="res://scenes/ui/dialogue_box.tscn" id="wired_dialoguebox"]
 
 [sub_resource type="Gradient" id="Gradient_rmjfq"]
 offsets = PackedFloat32Array(0, 0.21830986, 0.42488262, 1)
@@ -2829,6 +2834,16 @@ volume_db = -35.0
 stream = SubResource("AudioStreamMP3_lp2ca")
 volume_db = -20.0
 autoplay = true
+
+[node name="Livestock" parent="." instance=ExtResource("wired_livestock")]
+
+[node name="Workstations" parent="." instance=ExtResource("wired_workstations")]
+
+[node name="Villagers" parent="." instance=ExtResource("wired_villagers")]
+
+[node name="CraftingScreen" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_craftingscreen")]
+
+[node name="DialogueBox" parent="Overlay/CanvasLayer/Menus" instance=ExtResource("wired_dialoguebox")]
 
 [connection signal="do_action" from="Objects/Player" to="." method="_on_player_do_action"]
 [connection signal="tool_use" from="Objects/Player" to="." method="_on_player_tool_use"]

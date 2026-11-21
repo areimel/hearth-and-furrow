@@ -14,10 +14,8 @@ func _ready() -> void:
 	SaveManager.new_game()
 	_level = load("res://scenes/levels/level.tscn").instantiate()
 	add_child(_level)
-	_works = load("res://scenes/world/workstations.tscn").instantiate()
-	_level.add_child(_works)
-	_screen = load("res://scenes/ui/crafting_screen.tscn").instantiate()
-	_level.get_node("Overlay/CanvasLayer/Menus").add_child(_screen)
+	_works = _level.get_node("Workstations")
+	_screen = _level.get_node("Overlay/CanvasLayer/Menus/CraftingScreen")
 	var toasts: Node = load("res://scenes/ui/kit/toasts.tscn").instantiate()
 	_level.get_node("Overlay/CanvasLayer/Menus").add_child(toasts)
 

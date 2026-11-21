@@ -13,8 +13,7 @@ func _spawn() -> void:
 	level = load("res://scenes/levels/level.tscn").instantiate()
 	tree.root.add_child.call_deferred(level)  # the root is busy while the runner starts
 	await tree.process_frame
-	works = load("res://scenes/world/workstations.tscn").instantiate()
-	level.add_child(works)
+	works = level.get_node("Workstations")
 	await tree.process_frame
 	await tree.process_frame
 

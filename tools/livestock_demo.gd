@@ -5,7 +5,6 @@ extends Node
 func _ready() -> void:
 	var level: Level = load("res://scenes/levels/level.tscn").instantiate()
 	add_child(level)
-	var live: Livestock = load("res://scenes/world/livestock.tscn").instantiate()
-	level.add_child(live)
+	var live: Livestock = level.get_node("Livestock")
 	await get_tree().create_timer(0.3).timeout
 	level.player.position = live.pen_center() + Vector2(-60, 10)
