@@ -1,89 +1,156 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (and any contributor) in this repository.
 
 ## Project
 
-A Godot 4.6 (GDScript, Forward+ renderer) top-down farming sim built from Kristian Koch's "Godot Valley" course and then extended. The Godot project name is `StardewValley`; the main scene is `scenes/levels/level.tscn`. Viewport is 1280x720 with nearest-neighbour texture filtering (pixel art, 16px tiles).
+**Hearth & Furrow**: a cozy Tudor (c.1530) farming and crafting sim in Godot 4.6, GDScript, Forward+.
+Viewport 320x180 scaled x4 (integer scaling), 16px tiles, nearest filtering. Main scene
+`scenes/ui/title_screen.tscn`, which starts `scenes/levels/level.tscn`. The MVP thin slice is
+complete (`docs/mvp-roadmap.md`). It was built on the MIT-licensed "Godot Valley" course project;
+the player, house and fishing UI are still course art. Scope comes from the PRD
+(`Hearth and Furrow_ Product Requirements ...md`); API detail is in `docs/contracts.md`.
 
 ## Commands
 
-There is no build step, test suite, or linter. Everything runs through the Godot editor/binary (4.6+), which is not on `PATH` on this machine — ask for its location if you need to run it.
+Godot is not on `PATH`. The binary here is `~/.local/share/godot/4.6/godot` (`GODOT=` overrides it in
+`tools/check.sh`). Below, `godot` means that path.
 
 ```bash
-godot --path . --editor            # open the editor
-godot --path .                     # run the game (main scene)
-godot --path . --headless --import # re-import assets / regenerate .godot cache
-godot --path . --headless --check-only --script res://scripts/level.gd   # parse-check one script
-godot --path . --headless --export-release "Windows Desktop"             # presets: "Windows Desktop", "Web"
+godot --path . --editor                       # editor
+godot --path .                                # run the game
+godot --path . --headless --import            # rebuild the import cache (run it TWICE after moves/deletes)
+tools/check.sh --quick                        # import, parse-check all scripts, 300-line limit, unit tests
+tools/check.sh                                # + smoke runs (title screen, then level) of 300 frames
+tools/check.sh --full                         # + 112-day year simulation; must print OK before a commit
+godot --path . --headless res://tests/test_runner.tscn   # unit tests only (runs every tests/test_*.gd; no per-file filter)
+godot --path . --headless --script res://tools/bake_village.gd   # regenerate scenes/world/village.tscn
+godot --path . --headless --script res://tools/build_theme.gd    # regenerate scenes/ui/game_theme.tres
+tools/make_placeholder_art.sh                 # regenerate graphics/placeholder/ (ImageMagick `convert`)
+godot --path . res://tools/art/list_pending.tscn   # list placeholder textures and Content.validate() problems
+godot --path . res://tools/screenshot.tscn -- --out /tmp/shots --scene res://scenes/levels/level.tscn --frames 90 --name farm
+tools/wire_scene.py scenes/levels/level.tscn Name=res://scenes/world/x.tscn@.   # instance a scene without the editor
 ```
 
-Exports go to `exports/` (gitignored).
+- `screenshot.tscn` needs a display. The default scene is the title screen, so pass `--scene` for the
+  level. `--setup` takes comma-separated steps (`rain`, `storm`, `night`, `winter`, `plants`, `risks`,
+  `menu`, `days:N` ...; see the header of `tools/screenshot.gd`). It writes the raw 320x180 PNG and a
+  x4 copy; read the `_x4` file to look at it.
+- **`godot --check-only --script` does NOT work** for scripts that touch autoloads (they are skipped).
+  Use `tools/check.sh`: its parse-check loads every script inside the running project.
+- Export presets exist (`Windows Desktop`, `Web`); exports go to the gitignored `exports/`.
 
-## Layout quirks
+## Layout
 
-- **Live code is under `scripts/`**, mirrored by scene in `scenes/` (`scenes/ui/shop_ui.tscn` ↔ `scripts/ui/shop_ui.gd`). Scripts are not kept next to their scenes.
-- **Stale duplicates — do not edit:** `global/data.gd`, `global/enums.gd`, root `mouse.gd`, and `scenes/characters/player.gd` are leftovers. Nothing references them; the autoloads point at `scripts/global/`.
-- `*.tscn<digits>.tmp` files in `scenes/` are editor crash leftovers that happen to be tracked. Ignore them.
-- `premade/` holds course-supplied starter snippets/resources, not live code.
-- Every script/asset has a sibling `.uid` / `.import` file. Keep them together when moving or renaming, and prefer doing moves in the editor so `uid://` references in `.tscn` files stay valid.
-- `.tscn` files are large (`level.tscn` ≈ 2.8k lines, mostly tile data). Grep for the node/connection you need rather than reading them whole.
-- The README's TODO list marks Save/Load and In-Game Menu as done via upstream PRs; neither exists in this checkout.
+- `scripts/` by role: `autoload/` (services), `world/` (Level and its feature roots, grid, crops,
+  day cycle, build mode), `actors/` (player, NPC, animals), `objects/` (placeables, crops, trees),
+  `components/`, `ui/` (+ `ui/kit/` shared widgets, `ui/tabs/` menu tabs), `global/` (the enum
+  class `G`), `vfx/`. `scenes/` mirrors it; scripts are not stored next to their scenes.
+- `data/*.gd`: const tables, the only place content lives (items, crops, recipes, stations, animals,
+  gatherables, NPCs, shops, quests, festivals, dialogue, tool tiers, audio, `Balance`).
+  `resources/*.gd`: typed `Resource` classes. The `Content` autoload builds one from the other and
+  validates the lot (`Content.validate()`, run by the tests).
+- `tests/` (`test_*.gd` extending `TestCase`, run by `test_runner.tscn`), `tools/` (check, sims,
+  generators, `village/` source for the baked village), `docs/` (contracts, roadmap),
+  `graphics/placeholder/` (generated art), `ASSET_LICENSES.md` (the asset ledger).
 
 ## Architecture
 
-### Autoloads (`project.godot`)
+**Autoloads** (order in `project.godot`; roles only, signatures in `docs/contracts.md`): `Content`
+registry; `SaveManager` save file and providers; `Progress` flags and counters; `GameClock` time and the
+day-end signals; `Calendar` derived date; `Weather` today, forecast and storms; `Inventory` slots and
+hotbar; `Economy` coins and shop rules; `Relationships` hearts; `QuestManager`; `Settings` (class
+`GameSettings`); `GameSession` new, continue and quit; `AudioDirector`. `G` (enums) and `Balance`
+(`data/balance.gd`) are global classes, not autoloads: use them directly, never `preload` them.
 
-- `Enum` (`scripts/global/enums.gd`) — every enum: `Tool`, `Seed`, `Item`, `Machine`, `State`, `Style`, `Shop`, `Fish`, `KEYBOARD`.
-- `Data` (`scripts/global/data.gd`) — the single source of both **static config** (plant/fish/machine/style tables, costs, texture preloads, balance constants like `PLAYER_SPEED`, `BLOB_*`) and **mutable game state** (`ITEMS_AMOUNT` inventory, `unlocked_styles`, `unlocked_machines`, `FORECAST_RAIN`, `TARGET_HIGHLIGHTER`, `ControllerConnected`).
+**Content is data.** Ids are `StringName`s. Add a row to `data/*.gd` (and, for a new kind of thing, a
+`resources/` field plus the `ContentBuilder` line) instead of branching on ids in code. One fact lives
+in one place. `Content.validate()` enforces cross references and recipe chains.
 
-Almost every `Data` table is a dictionary keyed by an `Enum` value. Adding an enum member means adding a matching entry to each table that is indexed by it (e.g. a new `Machine` needs `MACHINE_SCENE`, `MACHINE_PREVIEW_TEXTURES`, `MACHINE_TEXTURES`, `MACHINE_UPGRADE_COST`), otherwise lookups fail at runtime. Enum order is load-bearing: values are cycled with `posmod(current + 1, count)` and stored as ints.
+**Level is the mediator** (`scripts/world/level.gd`). Under it sit `LevelFeature` roots (`FarmGrid`,
+`Livestock`, `Workstations`, `Foraging`, `RiskSystem`, `PlayerState`) that own a save section via
+`save_key`; `Level._ready()` starts them in tree order. Other children: `Villagers`, `Shops`,
+`QuestGiver`, `FestivalDirector`, `BuildMode`, `DayCycle`, `Sky`, `TreeGrove` and the HUD and menus.
+Add a feature by instancing its scene under Level (`tools/wire_scene.py`) and, if it saves, extending
+`LevelFeature`.
 
-`Data.shop_connection[shop]['tracker']` holds a *reference* to `unlocked_styles` / `unlocked_machines`; buying an item appends to the tracker, which is what unlocks it for the player. An item is "for sale" when it is in `'all'` but not in the tracker.
+**FarmGrid is the single authority on tiles**: terrain, tilled and wet soil, occupancy, village ground,
+`is_tool_valid`, `is_buildable`. Do not test tiles anywhere else.
 
-### Level as mediator
+**Tool flow**: `Player` handles `action` (interact with the nearest `Interactable` first, else the
+selected hotbar item) -> emits `do_action` -> `Level._on_player_do_action` plays the tool animation only if
+`FarmGrid.is_tool_valid` holds on some targeted cell -> an animation method track calls
+`Player.tool_use_emit()` -> `tool_use` -> `Level._on_player_tool_use` applies the effect to every cell of
+`ToolArea.cells(...)` (axe: `hit()` on `Axe_able` nodes in front). Seeds use the pseudo action
+`PlayerActions.SOW`. Build mode takes over the button through `Player.action_override`.
 
-`scripts/level.gd` (root of `level.tscn`) owns the world and is the hub for nearly all gameplay. The player never touches the world directly — it emits signals (`tool_use`, `do_action`, `build`, `change_machine`, `day_change`, `diagnose`, `close_shop`) that are connected to `Level` in the scene file.
+**Interaction**: anything usable is an `Interactable` (`Area2D`); keep its `prompt_text` current and
+disable it rather than blanking it. NPCs talk by default; extra dialogue options come from
+`Villagers.register_option`. **Items given or charged go through `Loot`** (`give`, `take`, `missing`,
+`deliver`), which also records `Progress`, toasts and handles a full pack.
 
-Tool flow: player presses `action` → `do_action` → `Level.is_tool_valid()` (the single authority on whether a tool can be used on a tile) → fires the tool one-shot animation → an animation method track calls `Player.tool_use_emit()` → `tool_use` → `Level._on_player_tool_use()` applies the effect.
+**UI kit**: screens extend `UIScreen` (`open`/`close`, closes on `ui_cancel`/`menu`, pauses time unless the
+setting is off). List screens are `ListDetail` + `DetailPane`; tabs are `TabStrip`; menu tabs extend
+`MenuTab` and are listed in `GameMenu.TABS`. The theme (`game_theme.tres`, regenerated by
+`tools/build_theme.gd` from `UIPalette`) is the only source of fonts and colours: **use theme type
+variations (`HeaderLabel`, `WarnLabel`, ...); never set colours, fonts or sizes in scripts.** Key hints
+use `InputGlyphs`.
 
-World state lives in TileMapLayers under `Layers/` rather than in script data:
-- `WaterGrassLayer` — terrain, with tile custom data `water` and `farmable`.
-- `SoilLayer` — hoed tiles; `WetSoilLayer` — watered tiles (cleared each day).
-- `TargetLayer` — the green/red target highlight.
+**Day end**: bed or 02:00 pass-out -> `DayCycle.end_day` (transition) -> `GameClock.advance_day()`:
+`day_ending` (resolve the old day), clock to 6:00, Calendar, Weather, Relationships, `day_passed`,
+`SaveManager.autosave()`. Listeners of one signal must not depend on each other. Details and the
+order are in `docs/contracts.md` section 8.
 
-`Level` additionally tracks `planted_cells` and `machine_cells` (grid coords) to block overlapping placement. Grid coords are `floor(pos / Data.TILE_SIZE)`; the targeted cell is the player's cell plus `animation_direction`.
+**Save contract**: each stateful service or feature has `to_dict`/`from_dict`/`reset` and registers
+under a key; `from_dict({})` must work and ids and plain values only are stored. Changing a section's
+shape means bumping `SAVE_VERSION` and adding a migration. One slot, `user://save_1.json` with `.bak`.
 
-### Day cycle
+## Conventions
 
-`Timers/DayTimer` (120s) drives the `CanvasModulate` colour and music volume in `Level._process`. A day ends only when the player triggers it (`day_change` input or the bed) → `day_restart()` runs the shader transition → `level_reset()`: each plant grows if its cell is in `WetSoilLayer` or decays otherwise, wet soil is cleared, trees regrow apples, and `raining` takes yesterday's `Data.FORECAST_RAIN` (rain waters all soil). The TV in the house displays the forecast.
+- Typed GDScript, **tabs**, doc comment on public members, one class per file with `class_name` when
+  it is referenced elsewhere. **Scripts stay under 300 lines** (`check.sh` reports `OVER:`).
+- Rule of three: extract a shared component when something repeats a third time; do not merge things
+  that only look alike.
+- Tests extend `TestCase` (`check`, `eq`, `near`), are named `test_*`, and reset state in `before_each`
+  (`SaveManager.new_game()`). Any `ERROR` line in a test log fails the gate.
+- Every script and asset has a sibling `.uid` / `.import`; they travel with the file. Prefer moving files in
+  the editor, or move both and run `--import` twice.
+- `.tscn` files are large (`level.tscn` is about 2.9k lines, mostly tiles): grep for the node or
+  connection you need; never read them whole.
+- Commit in small steps with imperative subjects (`feat:`, `fix:`, `docs:`, `chore:`); run
+  `tools/check.sh --full` first.
 
-### Player state machine
+## Gotchas
 
-`scripts/characters/player.gd` switches input handling on `current_state` (`Enum.State`: `DEFAULT`, `FISHING`, `BUILDING`, `SHOP`, `HOUSE`). Other nodes set this state from outside: `house.gd` on entering/leaving the house area, `Level.open_shop()`, and the fishing minigame. Animation is an `AnimationTree` with a movement state machine plus a tool state machine fired through a OneShot; movement is locked while a tool animation plays.
+- **Never push.** `origin` is the upstream course repo (`RezaTaheri01/godot-valley`). Work on branches
+  and worktrees; do not touch `main`.
+- After moving or deleting files, the first `--import` prints stale-cache errors. Run it twice.
+- `await` inside a node that a test frees leads to "resumed after instance is gone": use deferred calls
+  or an `is_instance_valid` guard.
+- A level booted directly (tests, tools, `--scene`) has `GameSession.in_game == false`: unprompted
+  dialogue and the "Saved" toast stay quiet and autosave stays off.
+- Tests must use the level's own feature nodes (`level.get_node("Livestock")`, `Workstations`, ...).
+  Adding a second copy registers a second provider under the same save key.
+- Physics nudges positions by sub-pixels: compare with a tolerance (`near`), not `==`.
+- Editing a `.tscn` by hand: add an `ext_resource` and a `[node ...]` block (see
+  `tools/wire_scene.py`, which is idempotent). Prefer the script for instancing.
+- `scenes/world/village.tscn` and `resources/village_tileset.tres` are **generated** by
+  `tools/bake_village.gd` from `tools/village/*`. Edit those and re-bake; a re-bake overwrites editor edits.
+- Time is paused behind open screens only while `pause_in_menus` is on; the clock never runs until the
+  Level calls `GameClock.start()`.
+- The `day_change` action (Tab) only works in debug builds.
+- `tests/test_village.gd` parses the `| Places` row of `docs/contracts.md` (one backticked id per place). Keep that row's format when editing the doc.
+- `tools/make_placeholder_art.sh` is the only writer of `graphics/placeholder/`; never hand-edit those PNGs.
+  The `Ninja Adventure` asset folder is addressed with built path strings (`data/paths.gd`): do not prune
+  it by grepping for file names.
 
-### Duck-typed interactions
+## Licensing and IP rules
 
-There are few base classes; behaviour is discovered by method name or group:
-- `interact(player)` + a `can_interact` property — anything the player can use with `action` when in range (shop NPCs via `ShopCharacter`, bed, TV).
-- `hit(tool, dir)` — anything in group `Axe_able` (trees) or `Sword_able` (blobs). Scarecrow projectiles call `hit(Enum.Tool.SWORD, …)` too.
-- `grow(watered, damage)` — plants; blobs call `grow(false, dmg)` to damage them.
-- Groups in use: `Player`, `Objects`, `Tree`, `Plants`, `Sword_able`, `Axe_able`, `Enemy`, `ShopCharacters`.
-
-Spawned scenes follow a `setup(...)` convention: the instance positions itself, adds itself to the given parent, and wires its own signals to callables passed in (see `plant.gd`, `machine.gd`).
-
-### Machines
-
-`Machine` (`scripts/machines/machine.gd`) is the base class for sprinkler, fisherman and scarecrow. Subclasses override `setup(grid_coord, level, parent)` to connect their signals to `Level` methods, then call `super`. Each machine connects to `Level.delete_machine` and frees itself when the emitted coord matches its own. `fisherman.gd` only completes setup if a neighbouring tile is water.
-
-### Plants
-
-`PlantResource` (`resources/plant_res.gd`) holds per-plant growth state (`age`, `death_count`) and is populated from `Data.PLANT_DATA`. A `plant.tscn` instance pairs with a `plant_info` UI panel that it frees alongside itself. Harvest happens when any body enters a fully grown plant's area.
-
-### Physics layers
-
-1 Terrain, 2 Player, 3 Objects, 4 Characters, 5 Enemy, 6 Interact, 7 Plant, 8 Machine.
-
-### Input
-
-Gameplay uses custom actions (`left/right/up/down`, `action`, `tool_forward`, `tool_backward`, `seed_forward`, `style_toggle`, `build`, `day_change`, `diagnose`, `highlighter`), each bound to both keyboard and gamepad. The on-screen key hints (`scripts/ui/keyboard_control_hint_ui.gd`, `key_hint.gd`) swap between `Data.KEYBOARD_KEYS` and `Data.KEYBOARD_CONTROLLER` icons based on `Data.ControllerConnected`, and are refreshed through the player's `update_control_ui` signal — emit it whenever the current tool/seed/machine/style/mode changes.
+- Every shipped asset needs a row in `ASSET_LICENSES.md` in the same commit that adds it. Prefer CC0,
+  then CC-BY, and keep the licence text beside the pack.
+- **No Mana Seed** assets: its licence forbids AI-assisted projects. **Nothing new from Sprout Lands**
+  (non-commercial; only its water tiles remain, to be replaced). Do not derive art from either.
+- Keep the `LICENSE` attribution to Reza Taheri intact.
+- IP rule: the game is "inspired by Tudor farm life". Never name any TV series, broadcaster or
+  presenter in code, data, docs, commits or art.
+- Anything not confirmed from the repo goes in the ledger as unverified, not as fact.
