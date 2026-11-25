@@ -1,0 +1,11 @@
+work/frames/
+work/clips/
+work/stills_raw/
+work/*.wav
+work/__pycache__/
+work/preview*/
+work/checks/
+work/m_*.jpg
+work/spec.png
+work/*.jpg
+work/**/contact.jpg
